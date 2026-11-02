@@ -28,6 +28,12 @@ Record of choices the proposal left open. Update this file when something change
 | D20 | Profile fields users may edit | Rules use an allowlist: `phone` (+233 format) and `fcmTokens`; officers also `onDuty`. Deactivated users can't edit. | Safer than the denylist in the ARCHITECTURE outline — new fields are protected by default. |
 | D21 | Role homes and platforms | Mobile: student/staff → `/home`, officer and admin → `/officer`. Web: admin → `/dashboard`, everyone else → "use the mobile app". Self sign-up link hidden on web. | ARCHITECTURE §1: web is admin-only; admins can do everything officers can. |
 | D22 | Deactivated users | The app watches `users/{uid}.deactivated`; when true it signs out and shows why on the login screen. Auth `disabled` (set by `adminSetRole`) blocks new sign-ins with the same message. | Covers both a live session and later log-ins. |
+| D23 | Push addresses | firebase_messaging 17 deprecates FCM tokens in favour of Firebase Installation IDs (`register()` / `onRegistered`). The app stores the FID in the existing `users.fcmTokens` array; functions send with `sendEachForMulticast({ fids })` and remove IDs FCM reports as stale. Push is mobile-only; the web dashboard uses live Firestore listeners. | Follows the current SDK without renaming a field in the schema. |
+| D24 | SOS without GPS | Location is fetched while the countdown runs; after it ends the app waits at most 3 s more, then sends with `location: null` if there is no fix. Live tracking fills `lastLocation` as soon as a fix arrives. | "SOS must never be blocked" — a late location beats a late alert. |
+| D25 | Active SOS screen | The member home *becomes* the active SOS screen while the user has an open SOS (one at a time), and location streams for as long as it is shown. Offline is detected from Firestore's `hasPendingWrites`; writes wait at most 6 s for the server, then stay queued. | Simple lifecycle: tracking can't outlive the SOS, and the offline card appears without a connectivity package. |
+| D26 | Onboarding | Permissions screen shown once per device after first sign-in on mobile (`shared_preferences`). Declining never blocks; the home screen shows a "location off" card with a fix button. | PRD: handle denial gracefully with a clear explanation. |
+| D27 | Timeline events | `onIncidentCreated` writes the `created` and `alerted` events (so offline SOS creation is a single write). Clients may only write events for their own actions: reporters `cancelled`; officers `accepted`, `assigned`, `on_scene`, `note`, `resolved`, `false_alarm`. | Keeps system events trustworthy. |
+| D28 | Rules test project | Rules tests use project `demo-vvu-rules-test` and run serially, so they can run against the dev emulators without wiping dev data. | Lets tests run while the app demo is up. |
 
 ## Open — need an answer
 
@@ -45,3 +51,4 @@ Record of choices the proposal left open. Update this file when something change
 - 2026-11-02 — Initial decisions extracted from the proposal and build spec.
 - 2026-11-02 — Milestone 0 setup: added D12–D17.
 - 2026-11-02 — Milestone 1 auth: added D18–D22.
+- 2026-11-02 — Milestone 2 SOS: added D23–D28.

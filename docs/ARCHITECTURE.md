@@ -55,7 +55,7 @@ Admin-only read/write (via dashboard import). Clients never read it directly —
 | role | string | mirror of claim |
 | verified | bool | |
 | onDuty | bool | officers only |
-| fcmTokens | array<string> | |
+| fcmTokens | array<string> | Push IDs of the user's devices (FCM installation IDs, see D23) |
 | falseAlarmCount | number | incremented by function |
 | deactivated | bool | |
 | createdAt | timestamp | |
@@ -72,7 +72,7 @@ Subcollection `users/{uid}/contacts/{contactId}`: `name`, `phone`, `relationship
 | reporterId | string | uid |
 | reporterName | string | denormalised for officer view |
 | reporterPhone | string | denormalised |
-| location | geopoint | location at creation |
+| location | geopoint? | location at creation; null if the phone had no fix (D24) |
 | geohash | string | for future geo queries |
 | lastLocation | geopoint | latest during active SOS |
 | locationLabel | string? | nearest named campus zone, optional |
@@ -86,7 +86,7 @@ Subcollection `users/{uid}/contacts/{contactId}`: `name`, `phone`, `relationship
 
 Subcollections:
 - `locations/{autoId}`: `point` (geopoint), `accuracy` (number, m), `timestamp`. Written by reporter device during active SOS only.
-- `events/{autoId}`: `type` (`created|alerted|accepted|assigned|on_scene|note|resolved|false_alarm|cancelled`), `actorId`, `actorName`, `text`, `timestamp`.
+- `events/{autoId}`: `type` (`created|alerted|accepted|assigned|on_scene|note|resolved|false_alarm|cancelled`), `actorId`, `actorName`, `text`, `timestamp`. `created` and `alerted` are written by `onIncidentCreated` (`actorId: system` for alerted); clients write only their own actions.
 - `messages/{autoId}`: `senderId`, `senderName`, `senderRole`, `text`, `imageUrl?`, `timestamp`.
 
 ### `announcements/{id}`
@@ -105,6 +105,7 @@ Default categories: `Theft`, `Assault`, `Harassment`, `Medical`, `Fire`, `Accide
 - `incidents`: `reporterId ASC, createdAt DESC`
 - `incidents`: `category ASC, createdAt DESC`
 - `incidents`: `assignedTo ARRAY_CONTAINS, createdAt DESC`
+- `users`: `role ASC, onDuty ASC` (on-duty officer lookup in `onIncidentCreated`)
 
 ## 4. Incident state machine
 

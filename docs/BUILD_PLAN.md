@@ -33,18 +33,18 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 
 ## Milestone 2 — SOS end to end (Weeks 2–3)
 
-- [ ] Onboarding permission screens (location, notifications)
-- [ ] Home screen with SOS button + countdown/cancel
-- [ ] `IncidentRepository.createSos()` with current location
-- [ ] `onIncidentCreated` function: status → `alerted`, event, FCM to on-duty officers
-- [ ] FCM setup: token storage, topics, foreground local notifications, tap routing
-- [ ] Active SOS screen; location streaming to `locations` + `lastLocation`; foreground service notification
-- [ ] "I'm safe" cancel
-- [ ] Offline fallback: queued write + SMS/call to `securityPhone`
-- [ ] Officer home: on-duty toggle + live queue
-- [ ] Alert detail: live map of reporter, Navigate button, Accept
-- [ ] `onIncidentUpdated`: `responseSeconds`, reporter push
-- [ ] Rules for `incidents` + `locations` + tests
+- [x] Onboarding permission screens (location, notifications)
+- [x] Home screen with SOS button + countdown/cancel
+- [x] `IncidentRepository.createSos()` with current location
+- [x] `onIncidentCreated` function: status → `alerted`, event, FCM to on-duty officers
+- [x] FCM setup: token storage, topics, foreground local notifications, tap routing
+- [x] Active SOS screen; location streaming to `locations` + `lastLocation`; foreground service notification
+- [x] "I'm safe" cancel
+- [x] Offline fallback: queued write + SMS/call to `securityPhone`
+- [x] Officer home: on-duty toggle + live queue
+- [x] Alert detail: live map of reporter, Navigate button, Accept
+- [x] `onIncidentUpdated`: `responseSeconds`, reporter push
+- [x] Rules for `incidents` + `locations` + tests
 
 **Demo:** student phone hits SOS → officer phone rings within seconds → officer sees moving dot and accepts → student sees "Officer X is on the way".
 
