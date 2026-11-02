@@ -1,0 +1,6 @@
+# Compiled JavaScript
+lib/
+
+node_modules/
+*.local
+firebase-debug.log*
