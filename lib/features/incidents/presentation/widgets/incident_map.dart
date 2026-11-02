@@ -4,11 +4,20 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// A map centred on an incident's position, following it as it moves.
 class IncidentMap extends StatefulWidget {
-  const IncidentMap({super.key, required this.point, this.label});
+  const IncidentMap({
+    super.key,
+    required this.point,
+    this.label,
+    this.emptyMessage =
+        'Location not available yet. Call the reporter to find them.',
+  });
 
   /// Null shows a "no location" placeholder instead of a map.
   final GeoPoint? point;
   final String? label;
+
+  /// Shown instead of the map when [point] is null.
+  final String emptyMessage;
 
   @override
   State<IncidentMap> createState() => _IncidentMapState();
@@ -38,13 +47,10 @@ class _IncidentMapState extends State<IncidentMap> {
     if (point == null) {
       return ColoredBox(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: const Center(
+        child: Center(
           child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Location not available yet. Call the reporter to find them.',
-              textAlign: TextAlign.center,
-            ),
+            padding: const EdgeInsets.all(16),
+            child: Text(widget.emptyMessage, textAlign: TextAlign.center),
           ),
         ),
       );

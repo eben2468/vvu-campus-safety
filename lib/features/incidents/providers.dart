@@ -1,12 +1,25 @@
+import 'dart:typed_data';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/errors/app_exception.dart';
+import '../../models/app_settings.dart';
 import '../../models/incident.dart';
 import '../../models/incident_event.dart';
 import '../../services/firestore_service.dart';
+import '../../services/storage_service.dart';
+import '../auth/providers.dart';
+import '../sos/providers.dart';
 import 'data/incident_repository.dart';
+import 'data/photo_repository.dart';
 
 final incidentRepositoryProvider = Provider<IncidentRepository>((ref) {
   return IncidentRepository(ref.watch(firestoreProvider));
+});
+
+final photoRepositoryProvider = Provider<PhotoRepository>((ref) {
+  return PhotoRepository(ref.watch(storageProvider));
 });
 
 /// One incident, live.
@@ -19,3 +32,58 @@ final incidentEventsProvider =
     StreamProvider.family<List<IncidentEvent>, String>((ref, id) {
       return ref.watch(incidentRepositoryProvider).watchEvents(id);
     });
+
+/// The signed-in user's own incidents, newest first.
+final myIncidentsProvider = StreamProvider<List<Incident>>((ref) {
+  final uid = ref.watch(sessionProvider.select((s) => s.profile?.uid));
+  if (uid == null) return Stream.value(const []);
+  return ref.watch(incidentRepositoryProvider).watchMyIncidents(uid);
+});
+
+final reportControllerProvider = Provider<ReportController>(
+  ReportController.new,
+);
+
+/// Submits an incident report: uploads the photos, then writes the
+/// incident (`onIncidentCreated` notifies officers).
+class ReportController {
+  ReportController(this._ref);
+
+  final Ref _ref;
+
+  Future<String> submit({
+    required String category,
+    required String description,
+    required List<Uint8List> photos,
+    GeoPoint? location,
+  }) async {
+    final reporter = _ref.read(sessionProvider).profile;
+    if (reporter == null) {
+      throw const AppException('Your profile is still loading. Try again.');
+    }
+    final incidents = _ref.read(incidentRepositoryProvider);
+    final incidentId = incidents.newIncidentId();
+    final mediaUrls = photos.isEmpty
+        ? const <String>[]
+        : await _ref
+              .read(photoRepositoryProvider)
+              .upload(
+                incidentId: incidentId,
+                reporterId: reporter.uid,
+                photos: photos,
+              );
+    final settings =
+        _ref.read(appSettingsProvider).value ?? const AppSettings();
+
+    await incidents.createReport(
+      incidentId: incidentId,
+      reporter: reporter,
+      category: category,
+      description: description.trim(),
+      mediaUrls: mediaUrls,
+      location: location,
+      locationLabel: location == null ? null : settings.zoneNameFor(location),
+    );
+    return incidentId;
+  }
+}

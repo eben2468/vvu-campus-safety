@@ -10,6 +10,7 @@ import '../../../models/incident_status.dart';
 import '../../auth/providers.dart';
 import '../../incidents/presentation/widgets/event_timeline.dart';
 import '../../incidents/presentation/widgets/incident_map.dart';
+import '../../incidents/presentation/widgets/photo_gallery.dart';
 import '../../incidents/presentation/widgets/status_chip.dart';
 import '../../incidents/providers.dart';
 
@@ -112,6 +113,10 @@ class _AlertDetailState extends ConsumerState<_AlertDetail> {
               if (incident.description.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(incident.description),
+              ],
+              if (incident.mediaUrls.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                PhotoGallery(urls: incident.mediaUrls),
               ],
               const SizedBox(height: 16),
               if (incident.status == IncidentStatus.alerted)

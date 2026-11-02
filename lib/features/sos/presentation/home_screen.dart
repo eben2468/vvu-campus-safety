@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/errors/app_exception.dart';
+import '../../../routing/routes.dart';
 import '../../auth/presentation/widgets/signed_in_scaffold.dart';
 import '../../auth/providers.dart';
 import '../providers.dart';
@@ -83,6 +85,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 32),
             const CallSecurityButton(),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push(Routes.report),
+              icon: const Icon(Icons.report_outlined),
+              label: const Text('Report an incident'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push(Routes.myReports),
+              icon: const Icon(Icons.list_alt),
+              label: const Text('My reports'),
+            ),
           ],
         ),
       ),

@@ -1,3 +1,4 @@
+import '../constants.dart';
 import 'formatters.dart';
 
 /// Form field validators. Each returns an error message, or null if valid.
@@ -52,6 +53,17 @@ abstract final class Validators {
     if ((value ?? '').trim().isEmpty) return 'Enter your phone number.';
     if (normalizeGhanaPhone(value!) == null) {
       return 'Enter a Ghana number, e.g. 024 123 4567.';
+    }
+    return null;
+  }
+
+  static String? reportDescription(String? value) {
+    final length = (value ?? '').trim().length;
+    if (length < minDescriptionLength) {
+      return 'Describe what happened (at least $minDescriptionLength characters).';
+    }
+    if (length > maxDescriptionLength) {
+      return 'Keep it under $maxDescriptionLength characters.';
     }
     return null;
   }

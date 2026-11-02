@@ -49,4 +49,14 @@ void main() {
     expect(validate('secret123'), isNull);
     expect(validate('secret124'), isNotNull);
   });
+
+  test('report descriptions must be 10 to 1000 characters', () {
+    expect(Validators.reportDescription('Too short'), isNotNull);
+    expect(Validators.reportDescription('   padded       '), isNotNull);
+    expect(
+      Validators.reportDescription('Laptop stolen in the library'),
+      isNull,
+    );
+    expect(Validators.reportDescription('x' * 1001), isNotNull);
+  });
 }

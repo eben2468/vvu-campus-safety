@@ -38,29 +38,91 @@ class IncidentRepository {
   }) async {
     final doc = _incidents.doc();
     await _commitOrQueue(
-      doc.set({
-        'kind': IncidentKind.sos.name,
-        'category': sosCategory,
-        'description': '',
-        'status': IncidentStatus.newIncident.value,
-        'reporterId': reporter.uid,
-        'reporterName': reporter.fullName,
-        'reporterPhone': reporter.phone,
-        'location': location,
-        'geohash': location == null
-            ? null
-            : geohash(location.latitude, location.longitude),
-        'lastLocation': location,
-        'locationLabel': locationLabel,
-        'mediaUrls': <String>[],
-        'assignedTo': <String>[],
-        'createdAt': FieldValue.serverTimestamp(),
-        'active': true,
-        'cancelledByReporter': false,
-      }),
+      doc.set(
+        _newIncident(
+          kind: IncidentKind.sos,
+          category: sosCategory,
+          description: '',
+          reporter: reporter,
+          location: location,
+          locationLabel: locationLabel,
+        ),
+      ),
     );
     return doc.id;
   }
+
+  /// A fresh id for a report, so photos can be uploaded under it before
+  /// the incident document is written.
+  String newIncidentId() => _incidents.doc().id;
+
+  /// Creates a report (PRD §4.3) with already-uploaded photo URLs.
+  Future<void> createReport({
+    required String incidentId,
+    required AppUser reporter,
+    required String category,
+    required String description,
+    required List<String> mediaUrls,
+    GeoPoint? location,
+    String? locationLabel,
+  }) {
+    return _commitOrQueue(
+      _incidents
+          .doc(incidentId)
+          .set(
+            _newIncident(
+              kind: IncidentKind.report,
+              category: category,
+              description: description,
+              reporter: reporter,
+              location: location,
+              locationLabel: locationLabel,
+              mediaUrls: mediaUrls,
+            ),
+          ),
+    );
+  }
+
+  /// Everything the user has raised (SOS and reports), newest first.
+  Stream<List<Incident>> watchMyIncidents(String uid) {
+    return _incidents
+        .where('reporterId', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .limit(100)
+        .snapshots(includeMetadataChanges: true)
+        .map((snap) => snap.docs.map(_fromSnapshot).toList());
+  }
+
+  /// The document a reporter creates; must satisfy `validNewIncident()` in
+  /// firestore.rules.
+  static Map<String, dynamic> _newIncident({
+    required IncidentKind kind,
+    required String category,
+    required String description,
+    required AppUser reporter,
+    GeoPoint? location,
+    String? locationLabel,
+    List<String> mediaUrls = const [],
+  }) => {
+    'kind': kind.name,
+    'category': category,
+    'description': description,
+    'status': IncidentStatus.newIncident.value,
+    'reporterId': reporter.uid,
+    'reporterName': reporter.fullName,
+    'reporterPhone': reporter.phone,
+    'location': location,
+    'geohash': location == null
+        ? null
+        : geohash(location.latitude, location.longitude),
+    'lastLocation': location,
+    'locationLabel': locationLabel,
+    'mediaUrls': mediaUrls,
+    'assignedTo': <String>[],
+    'createdAt': FieldValue.serverTimestamp(),
+    'active': true,
+    'cancelledByReporter': false,
+  };
 
   /// The reporter's open SOS, if any (a user may only have one).
   Stream<Incident?> watchMyActiveSos(String uid) {

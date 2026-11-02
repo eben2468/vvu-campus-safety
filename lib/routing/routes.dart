@@ -19,6 +19,12 @@ abstract final class Routes {
   static const dashboard = '/dashboard'; // admin (web)
   static const useMobileApp = '/use-mobile-app'; // non-admins on web
 
+  // Member pages (under /home so the role redirect allows them)
+  static const report = '/home/report';
+  static const myReports = '/home/reports';
+  static const reportDetailPattern = '/home/reports/:incidentId';
+  static String reportDetail(String incidentId) => '/home/reports/$incidentId';
+
   /// Officer view of one alert.
   static const incidentAlertPattern = '/officer/incident/:incidentId';
   static String incidentAlert(String incidentId) =>

@@ -121,3 +121,10 @@ const campusTimeZone = 'Africa/Accra';
 /// Default map centre: VVU Oyibi campus (approximate, until zones are set).
 const campusCenterLat = 5.7930;
 const campusCenterLng = -0.1220;
+
+/// Largest photo we upload after compression (DECISIONS.md D5).
+const maxPhotoBytes = 1024 * 1024;
+
+/// Allowed length of an incident report description (PRD §4.3).
+const minDescriptionLength = 10;
+const maxDescriptionLength = 1000;
