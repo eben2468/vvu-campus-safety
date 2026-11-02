@@ -69,13 +69,13 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 
 ## Milestone 5 — Admin web dashboard (Week 6)
 
-- [ ] Admin shell (side nav) for web
-- [ ] Live board: campus map + active incident list, new-SOS sound/flash, summary cards
-- [ ] Incidents page: filterable table + detail drawer with all actions
-- [ ] Users page: search, create officer/admin (`adminCreateUser`), change role / deactivate (`adminSetRole`)
-- [ ] Roster CSV import (`adminImportRoster`)
-- [ ] Announcements composer
-- [ ] Deploy dashboard to Firebase Hosting
+- [x] Admin shell (side nav) for web
+- [x] Live board: campus map + active incident list, new-SOS sound/flash, summary cards
+- [x] Incidents page: filterable table + detail drawer with all actions
+- [x] Users page: search, create officer/admin (`adminCreateUser`), change role / deactivate (`adminSetRole`)
+- [x] Roster CSV import (`adminImportRoster`)
+- [x] Announcements composer
+- [ ] Deploy dashboard to Firebase Hosting — waiting on the real Firebase project (`flutterfire configure`, Blaze plan); `firebase.json` hosting serves `build/web`
 
 **Demo:** CSO watches the live board while a test SOS comes in and is resolved.
 

@@ -93,7 +93,7 @@ Subcollections:
 `title`, `body`, `audience` (`all|students|staff|officers`), `createdBy`, `createdAt`.
 
 ### `auditLogs/{id}`
-`actorId`, `action` (e.g. `role_changed`, `user_deactivated`, `roster_imported`, `settings_updated`), `target`, `details` (map), `timestamp`. Written by functions only.
+`actorId`, `action` (`user_created`, `role_changed`, `user_deactivated`, `user_reactivated`, `roster_imported`; `settings_updated` from Milestone 6), `target` (uid, or `idRoster`), `details` (map), `timestamp`. Written by functions only; read by admins.
 
 ### `settings/app` (single doc)
 `categories` (array<string>), `securityPhone` (string), `sosCountdownSec` (number, default 3), `campusBoundary` (array<geopoint>), `zones` (array of `{name, center: geopoint, radiusM}`).
@@ -107,6 +107,7 @@ Default categories: `Theft`, `Assault`, `Harassment`, `Medical`, `Fire`, `Accide
 - `incidents`: `assignedTo ARRAY_CONTAINS, createdAt DESC`
 - `announcements`: `audience ASC, createdAt DESC` (each user's announcement list)
 - `users`: `role ASC, onDuty ASC` (on-duty officer lookup in `onIncidentCreated`)
+- `events` (collection group): `timestamp DESC` field override — the live board's activity feed across all incidents (rules: `match /{path=**}/events/{e}` readable by officers/admins)
 
 ## 4. Incident state machine
 
@@ -250,7 +251,7 @@ lib/
     auth/{data,presentation}/...
     sos/...  incidents/...  officer/...  contacts/...
     notifications/...  profile/...
-    admin/{live_board,incidents,analytics,reports,users,announcements,settings}/...
+    admin/{shell,live_board,incidents,users,roster,announcements}/...   (analytics, reports, settings: Milestone 6)
 test/
   models/  features/  (unit + widget tests)
 functions/
