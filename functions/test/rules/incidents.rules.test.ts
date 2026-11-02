@@ -137,6 +137,31 @@ describe("creating an SOS", () => {
   });
 });
 
+describe("creating a report", () => {
+  const report = (fields: Record<string, unknown> = {}) => ({
+    ...newSos(),
+    kind: "report",
+    category: "Theft",
+    description: "My laptop was taken from the library.",
+    mediaUrls: ["https://example.com/photo_1.jpg"],
+    ...fields,
+  });
+
+  it("is allowed with a description and up to 3 photos", async () => {
+    await assertSucceeds(setDoc(doc(as.kwame(), "incidents/r1"), report()));
+    await assertSucceeds(setDoc(doc(as.kwame(), "incidents/r2"), report({ mediaUrls: ["a", "b", "c"] })));
+  });
+
+  it("needs a 10–1000 character description", async () => {
+    await assertFails(setDoc(doc(as.kwame(), "incidents/r1"), report({ description: "Too short" })));
+    await assertFails(setDoc(doc(as.kwame(), "incidents/r1"), report({ description: "x".repeat(1001) })));
+  });
+
+  it("allows at most 3 photos", async () => {
+    await assertFails(setDoc(doc(as.kwame(), "incidents/r1"), report({ mediaUrls: ["a", "b", "c", "d"] })));
+  });
+});
+
 describe("reading incidents", () => {
   beforeEach(async () => {
     await seedIncident("s1", { reporterId: "kwame" });

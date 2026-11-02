@@ -71,8 +71,11 @@ service cloud.firestore {
         && data.cancelledByReporter == false
         && data.createdAt == request.time
         && data.assignedTo.size() == 0
-        && data.mediaUrls.size() <= 3
-        && (data.location == null || data.location is latlng);
+        && data.mediaUrls is list && data.mediaUrls.size() <= 3
+        && (data.location == null || data.location is latlng)
+        // SOS needs nothing typed; a report needs a 10–1000 character description.
+        && (data.kind == 'sos' || (data.description is string
+              && data.description.size() >= 10 && data.description.size() <= 1000));
     }
 
     // Reporter shares their live position while the incident is open.

@@ -1,10 +1,34 @@
 rules_version = '2';
 
-// Locked down until Milestone 3 adds incident photo rules (docs/ARCHITECTURE.md §6).
+// Incident photos live at incidents/{incidentId}/{file} (docs/ARCHITECTURE.md §6).
+// The uploader's uid is stored as custom metadata `reporterId`, so reads can
+// be checked without a Firestore lookup.
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if false;
+
+    function signedIn() { return request.auth != null; }
+    function isOfficer() { return signedIn() && request.auth.token.role in ['officer', 'admin']; }
+    function isMember() {
+      return signedIn() && request.auth.token.verified == true
+        && request.auth.token.role in ['student', 'staff'];
     }
+
+    match /incidents/{incidentId}/{fileName} {
+      allow read: if isOfficer()
+        || (signedIn() && resource.metadata.reporterId == request.auth.uid);
+
+      // Photos only (no video in the MVP), under 2 MB, tagged with the
+      // uploader as reporter. Evidence can't be replaced or deleted — note
+      // that uploading over an existing file counts as `create`, hence
+      // `resource == null`.
+      allow create: if isMember()
+        && resource == null
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.metadata.reporterId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Everything else is locked.
   }
 }
