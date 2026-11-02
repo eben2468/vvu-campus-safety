@@ -17,11 +17,14 @@ import {
   addDoc,
   arrayUnion,
   collection,
+  collectionGroup,
   doc,
   Firestore,
   GeoPoint,
   getDoc,
   getDocs,
+  limit,
+  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -459,5 +462,53 @@ describe("announcements", () => {
 
   it("rejects unknown audiences", async () => {
     await assertFails(setDoc(doc(as.admin(), "announcements/new"), post("admins")));
+  });
+});
+
+describe("announcement length", () => {
+  it("limits the title and body", async () => {
+    const post = { audience: "all", createdBy: "admin1", createdAt: serverTimestamp() };
+    await assertFails(setDoc(doc(as.admin(), "announcements/long1"), { ...post, title: "x".repeat(121), body: "Body" }));
+    await assertFails(setDoc(doc(as.admin(), "announcements/long2"), { ...post, title: "Title", body: "x".repeat(2001) }));
+  });
+});
+
+describe("dashboard", () => {
+  beforeEach(async () => {
+    await seedIncident("feed1", { status: "alerted" });
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(db(context), "incidents/feed1/events/e1"), {
+        type: "alerted",
+        actorId: "system",
+        actorName: "System",
+        text: "Sent to 2 officers.",
+        timestamp: new Date(),
+      });
+      await setDoc(doc(db(context), "auditLogs/log1"), {
+        actorId: "admin1",
+        action: "role_changed",
+        target: "kwame",
+        details: {},
+        timestamp: new Date(),
+      });
+    });
+  });
+
+  const recentEvents = (firestore: Firestore) =>
+    getDocs(query(collectionGroup(firestore, "events"), orderBy("timestamp", "desc"), limit(20)));
+
+  it("officers and admins can read the activity feed across incidents", async () => {
+    await assertSucceeds(recentEvents(as.admin()));
+    await assertSucceeds(recentEvents(as.officer()));
+  });
+
+  it("students can't read other people's timelines through the feed", async () => {
+    await assertFails(recentEvents(as.kwame()));
+  });
+
+  it("only admins read the audit log, and nobody writes it", async () => {
+    await assertSucceeds(getDoc(doc(as.admin(), "auditLogs/log1")));
+    await assertFails(getDoc(doc(as.officer(), "auditLogs/log1")));
+    await assertFails(setDoc(doc(as.admin(), "auditLogs/fake"), { actorId: "admin1", action: "role_changed" }));
   });
 });
