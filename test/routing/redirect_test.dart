@@ -202,7 +202,32 @@ void main() {
       routeForPush({'type': 'sos', 'incidentId': 's1'}),
       Routes.incidentAlert('s1'),
     );
-    expect(routeForPush({'type': 'status', 'incidentId': 's1'}), Routes.splash);
+    expect(
+      routeForPush({'type': 'status', 'incidentId': 's1'}),
+      Routes.reportDetail('s1'),
+    );
+    expect(
+      routeForPush({'type': 'message', 'incidentId': 's1'}),
+      Routes.chat('s1'),
+    );
+    expect(routeForPush({'type': 'announcement'}), Routes.announcements);
     expect(routeForPush({}), Routes.splash);
+  });
+
+  test('chat and announcements are open to every phone user', () {
+    for (final role in UserRole.values) {
+      expect(
+        redirectFor(active(role), Routes.chat('s1'), isWeb: false),
+        isNull,
+      );
+      expect(
+        redirectFor(active(role), Routes.announcements, isWeb: false),
+        isNull,
+      );
+    }
+    expect(
+      redirectFor(active(UserRole.admin), Routes.chat('s1'), isWeb: true),
+      Routes.dashboard,
+    );
   });
 }

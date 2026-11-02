@@ -26,6 +26,13 @@ class MessagingService {
     importance: Importance.max,
   );
 
+  static const _announcementsChannel = AndroidNotificationChannel(
+    announcementsChannelId,
+    'Campus announcements',
+    description: 'Safety notices from the Security Office.',
+    importance: Importance.high,
+  );
+
   bool get _supported => !kIsWeb;
 
   /// Sets up the alert channel and calls [onOpen] with the message data when
@@ -51,6 +58,11 @@ class MessagingService {
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.createNotificationChannel(_channel);
+      await _local
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(_announcementsChannel);
 
       // The system shows pushes in the background; in the foreground we
       // show them ourselves.
@@ -95,17 +107,20 @@ class MessagingService {
   Future<void> _showInForeground(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
+    final channel = message.data['type'] == 'announcement'
+        ? _announcementsChannel
+        : _channel;
     await _local.show(
       id: message.hashCode,
       title: notification.title,
       body: notification.body,
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          _channel.id,
-          _channel.name,
-          channelDescription: _channel.description,
-          importance: Importance.max,
-          priority: Priority.max,
+          channel.id,
+          channel.name,
+          channelDescription: channel.description,
+          importance: channel.importance,
+          priority: Priority.high,
         ),
       ),
       payload: jsonEncode(message.data),

@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/announcement.dart';
 import '../../routing/routes.dart';
+import '../../services/firestore_service.dart';
 import '../../services/messaging_service.dart';
 import '../auth/data/session.dart';
 import '../auth/providers.dart';
+import 'data/announcement_repository.dart';
 import 'data/push_repository.dart';
 
 final pushRepositoryProvider = Provider<PushRepository>((ref) {
@@ -39,6 +42,20 @@ String routeForPush(Map<String, dynamic> data) {
   return switch (data['type']) {
     'sos' ||
     'report' when incidentId != null => Routes.incidentAlert(incidentId),
+    'status' when incidentId != null => Routes.reportDetail(incidentId),
+    'message' when incidentId != null => Routes.chat(incidentId),
+    'announcement' => Routes.announcements,
     _ => Routes.splash, // the router sends the user to their home screen
   };
 }
+
+final announcementRepositoryProvider = Provider<AnnouncementRepository>((ref) {
+  return AnnouncementRepository(ref.watch(firestoreProvider));
+});
+
+/// Announcements for the signed-in user's role, newest first.
+final announcementsProvider = StreamProvider<List<Announcement>>((ref) {
+  final role = ref.watch(sessionProvider.select((s) => s.role));
+  if (role == null) return Stream.value(const []);
+  return ref.watch(announcementRepositoryProvider).watchFor(role);
+});

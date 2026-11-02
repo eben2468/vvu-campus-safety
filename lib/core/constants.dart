@@ -115,6 +115,9 @@ const maxEmergencyContacts = 5;
 /// Android notification channel for SOS and report alerts.
 const sosAlertsChannelId = 'sos_alerts';
 
+/// Android notification channel for campus announcements (less urgent).
+const announcementsChannelId = 'announcements';
+
 /// Display timezone. Africa/Accra is UTC+0 with no daylight saving.
 const campusTimeZone = 'Africa/Accra';
 

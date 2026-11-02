@@ -43,6 +43,12 @@ String? redirectFor(
       }
       // Each home is a prefix for its pages, e.g. /officer/incident/<id>.
       final home = homeFor(session.role!, isWeb: isWeb);
-      return location.startsWith(home) ? null : home;
+      if (location.startsWith(home)) return null;
+      if (!isWeb && _isShared(location)) return null;
+      return home;
   }
 }
+
+/// Pages every signed-in phone user can open: announcements and chat.
+bool _isShared(String location) =>
+    location == Routes.announcements || location.startsWith('/chat/');

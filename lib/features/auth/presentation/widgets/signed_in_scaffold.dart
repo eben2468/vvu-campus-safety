@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../routing/routes.dart';
 
 import 'email_verification_banner.dart';
 import 'sign_out_button.dart';
@@ -6,15 +9,34 @@ import 'sign_out_button.dart';
 /// Layout for signed-in screens: app bar with sign-out, the email
 /// confirmation banner, then [body].
 class SignedInScaffold extends StatelessWidget {
-  const SignedInScaffold({super.key, required this.title, required this.body});
+  const SignedInScaffold({
+    super.key,
+    required this.title,
+    required this.body,
+    this.showAnnouncements = false,
+  });
 
   final String title;
   final Widget body;
 
+  /// Adds an app bar button to the announcements list (phone home screens).
+  final bool showAnnouncements;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title), actions: const [SignOutButton()]),
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          if (showAnnouncements)
+            IconButton(
+              tooltip: 'Announcements',
+              icon: const Icon(Icons.campaign),
+              onPressed: () => context.push(Routes.announcements),
+            ),
+          const SignOutButton(),
+        ],
+      ),
       body: Column(
         children: [
           const EmailVerificationBanner(),

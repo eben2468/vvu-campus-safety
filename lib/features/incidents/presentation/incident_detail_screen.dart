@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/formatters.dart';
 import '../../../models/incident.dart';
+import '../../../routing/routes.dart';
+import '../../sos/presentation/widgets/call_security_button.dart';
 import '../providers.dart';
 import 'widgets/event_timeline.dart';
 import 'widgets/incident_map.dart';
@@ -72,6 +75,14 @@ class _Details extends ConsumerWidget {
           const SizedBox(height: 16),
           PhotoGallery(urls: incident.mediaUrls),
         ],
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: () => context.push(Routes.chat(incident.id)),
+          icon: const Icon(Icons.chat),
+          label: const Text('Chat with security'),
+        ),
+        const SizedBox(height: 8),
+        const CallSecurityButton(),
         const SizedBox(height: 16),
         ClipRRect(
           borderRadius: BorderRadius.circular(12),

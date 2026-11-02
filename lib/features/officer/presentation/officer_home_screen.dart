@@ -21,6 +21,7 @@ class OfficerHomeScreen extends ConsumerWidget {
 
     return SignedInScaffold(
       title: 'Security officer',
+      showAnnouncements: true,
       body: Column(
         children: [
           SwitchListTile(

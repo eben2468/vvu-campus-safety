@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/errors/app_exception.dart';
 import '../../models/app_settings.dart';
+import '../../models/chat_message.dart';
 import '../../models/incident.dart';
 import '../../models/incident_event.dart';
 import '../../services/firestore_service.dart';
 import '../../services/storage_service.dart';
 import '../auth/providers.dart';
 import '../sos/providers.dart';
+import 'data/chat_repository.dart';
 import 'data/incident_repository.dart';
 import 'data/photo_repository.dart';
 
@@ -87,3 +89,18 @@ class ReportController {
     return incidentId;
   }
 }
+
+final chatRepositoryProvider = Provider<ChatRepository>((ref) {
+  return ChatRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(storageProvider),
+  );
+});
+
+/// An incident's chat, oldest first.
+final chatMessagesProvider = StreamProvider.family<List<ChatMessage>, String>((
+  ref,
+  incidentId,
+) {
+  return ref.watch(chatRepositoryProvider).watchMessages(incidentId);
+});

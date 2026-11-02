@@ -11,9 +11,11 @@ import '../features/auth/presentation/splash_screen.dart';
 import '../features/auth/presentation/use_mobile_app_screen.dart';
 import '../features/auth/presentation/verify_id_screen.dart';
 import '../features/auth/providers.dart';
+import '../features/incidents/presentation/chat_screen.dart';
 import '../features/incidents/presentation/incident_detail_screen.dart';
 import '../features/incidents/presentation/my_reports_screen.dart';
 import '../features/incidents/presentation/report_screen.dart';
+import '../features/notifications/presentation/announcements_screen.dart';
 import '../features/officer/presentation/alert_detail_screen.dart';
 import '../features/officer/presentation/officer_home_screen.dart';
 import '../features/sos/presentation/home_screen.dart';
@@ -70,6 +72,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.incidentAlertPattern,
         builder: (_, state) =>
             AlertDetailScreen(incidentId: state.pathParameters['incidentId']!),
+      ),
+      GoRoute(
+        path: Routes.announcements,
+        builder: (_, _) => const AnnouncementsScreen(),
+      ),
+      GoRoute(
+        path: Routes.chatPattern,
+        builder: (_, state) =>
+            ChatScreen(incidentId: state.pathParameters['incidentId']!),
       ),
       GoRoute(
         path: Routes.dashboard,

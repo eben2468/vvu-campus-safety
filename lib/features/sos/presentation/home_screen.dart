@@ -9,6 +9,7 @@ import '../../auth/presentation/widgets/signed_in_scaffold.dart';
 import '../../auth/providers.dart';
 import '../providers.dart';
 import 'active_sos_screen.dart';
+import '../../notifications/presentation/latest_announcement.dart';
 import 'widgets/call_security_button.dart';
 import 'widgets/location_warning_card.dart';
 import 'widgets/sos_button.dart';
@@ -60,6 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final textTheme = Theme.of(context).textTheme;
     return SignedInScaffold(
       title: 'VVU Campus Safety',
+      showAnnouncements: true,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -85,6 +87,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 32),
             const CallSecurityButton(),
+            const SizedBox(height: 24),
+            const LatestAnnouncement(),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => context.push(Routes.report),

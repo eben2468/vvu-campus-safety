@@ -247,13 +247,132 @@ class IncidentRepository {
         });
       });
     } on FirebaseException catch (e) {
-      throw AppException(
-        e.code == 'unavailable'
-            ? 'No connection. Check your data and try again.'
-            : 'Could not accept the alert. Please try again.',
-      );
+      throw AppException(_officerError(e, 'accept the alert'));
     }
   }
+
+  /// Moves an incident to on scene, resolved or false alarm (PRD §4.5).
+  /// On scene and resolve are for officers assigned to the incident (or an
+  /// admin); anyone on the security team may mark a false alarm. The
+  /// `onIncidentUpdated` function then closes it and tells the reporter.
+  Future<void> updateStatus(
+    String incidentId,
+    IncidentStatus to,
+    AppUser officer, {
+    String note = '',
+  }) async {
+    final ref = _incidents.doc(incidentId);
+    try {
+      await _firestore.runTransaction((tx) async {
+        final snap = await tx.get(ref);
+        final data = snap.data() ?? const <String, dynamic>{};
+        final from = IncidentStatus.fromValue(
+          data['status'] as String? ?? 'new',
+        );
+        final assignedTo = List<String>.from(
+          data['assignedTo'] as List? ?? const [],
+        );
+
+        if (!from.canTransition(to, by: StatusActor.officer)) {
+          throw AppException(
+            'This incident is ${from.label.toLowerCase()} and cannot be marked '
+            '${to.label.toLowerCase()}.',
+          );
+        }
+        if (!canActOn(assignedTo, officer, to)) {
+          throw const AppException(
+            'Accept or be assigned to this incident first.',
+          );
+        }
+        tx.update(ref, {'status': to.value});
+        tx.set(_events(incidentId).doc(), {
+          'type': _eventFor(to).value,
+          'actorId': officer.uid,
+          'actorName': officer.fullName,
+          'text': _statusText(to, officer.fullName, note.trim()),
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      });
+    } on FirebaseException catch (e) {
+      throw AppException(_officerError(e, 'update the incident'));
+    }
+  }
+
+  /// Whether [officer] may move an incident with these assignees to [to]:
+  /// mirrors `officerUpdate()` in firestore.rules.
+  static bool canActOn(
+    List<String> assignedTo,
+    AppUser officer,
+    IncidentStatus to,
+  ) {
+    if (to == IncidentStatus.falseAlarm) return true;
+    return assignedTo.contains(officer.uid) || officer.role == UserRole.admin;
+  }
+
+  /// Adds another officer to the response team.
+  Future<void> assign(
+    String incidentId, {
+    required AppUser assignee,
+    required AppUser by,
+  }) async {
+    final batch = _firestore.batch()
+      ..update(_incidents.doc(incidentId), {
+        'assignedTo': FieldValue.arrayUnion([assignee.uid]),
+      })
+      ..set(_events(incidentId).doc(), {
+        'type': IncidentEventType.assigned.value,
+        'actorId': by.uid,
+        'actorName': by.fullName,
+        'text': '${by.fullName} assigned ${assignee.fullName}.',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    try {
+      await batch.commit();
+    } on FirebaseException catch (e) {
+      throw AppException(_officerError(e, 'assign the officer'));
+    }
+  }
+
+  /// A note on the incident's timeline (e.g. what the officer found).
+  Future<void> addNote(String incidentId, AppUser officer, String text) async {
+    try {
+      await _events(incidentId).add({
+        'type': IncidentEventType.note.value,
+        'actorId': officer.uid,
+        'actorName': officer.fullName,
+        'text': text.trim(),
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      throw AppException(_officerError(e, 'save the note'));
+    }
+  }
+
+  static IncidentEventType _eventFor(IncidentStatus status) => switch (status) {
+    IncidentStatus.onScene => IncidentEventType.onScene,
+    IncidentStatus.resolved => IncidentEventType.resolved,
+    IncidentStatus.falseAlarm => IncidentEventType.falseAlarm,
+    IncidentStatus.accepted => IncidentEventType.accepted,
+    IncidentStatus.alerted => IncidentEventType.alerted,
+    IncidentStatus.newIncident => IncidentEventType.created,
+  };
+
+  static String _statusText(IncidentStatus to, String name, String note) {
+    final base = switch (to) {
+      IncidentStatus.onScene => '$name arrived on scene.',
+      IncidentStatus.resolved => '$name resolved the incident.',
+      IncidentStatus.falseAlarm => '$name marked this as a false alarm.',
+      _ => '$name changed the status to ${to.label.toLowerCase()}.',
+    };
+    return note.isEmpty ? base : '$base Note: $note';
+  }
+
+  static String _officerError(FirebaseException e, String action) =>
+      switch (e.code) {
+        'unavailable' => 'No connection. Check your data and try again.',
+        'permission-denied' => 'You are not allowed to $action.',
+        _ => 'Could not $action. Please try again.',
+      };
 
   /// Waits briefly for the server; if it doesn't answer (e.g. offline) the
   /// write stays queued in the local cache and is sent later.

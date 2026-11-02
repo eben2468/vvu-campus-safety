@@ -30,6 +30,12 @@ abstract final class Routes {
   static String incidentAlert(String incidentId) =>
       '/officer/incident/$incidentId';
 
+  // Shared by members and officers on mobile (data access is still
+  // enforced by firestore.rules).
+  static const announcements = '/announcements';
+  static const chatPattern = '/chat/:incidentId';
+  static String chat(String incidentId) => '/chat/$incidentId';
+
   /// Routes a signed-out user may visit.
   static const signedOutRoutes = {login, register, forgotPassword};
 }

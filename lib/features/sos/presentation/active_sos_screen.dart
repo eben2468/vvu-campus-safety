@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/theme.dart';
 import '../../../models/incident.dart';
 import '../../../models/incident_status.dart';
+import '../../../routing/routes.dart';
 import '../../../services/location_service.dart';
 import '../../auth/providers.dart';
 import '../../incidents/providers.dart';
@@ -110,6 +112,12 @@ class _ActiveSosScreenState extends ConsumerState<ActiveSosScreen> {
               const SizedBox(height: 16),
             ],
             const CallSecurityButton(filled: true),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => context.push(Routes.chat(incident.id)),
+              icon: const Icon(Icons.chat),
+              label: const Text('Chat with security'),
+            ),
             const SizedBox(height: 32),
             if (canCancel)
               HoldToConfirmButton(
