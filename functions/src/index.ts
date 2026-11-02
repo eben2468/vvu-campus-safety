@@ -13,3 +13,4 @@ setGlobalOptions({ region: "europe-west1", maxInstances: 10 });
 initializeApp();
 
 export { verifyId } from "./verifyId";
+export { onIncidentCreated, onIncidentUpdated } from "./incidents";

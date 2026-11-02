@@ -9,11 +9,19 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function isAdmin() { return signedIn() && request.auth.token.role == 'admin'; }
     function isOfficer() { return signedIn() && request.auth.token.role in ['officer', 'admin']; }
+    function isMember() {
+      return signedIn() && request.auth.token.verified == true
+        && request.auth.token.role in ['student', 'staff'];
+    }
+    function notDeactivated() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('deactivated', false) != true;
+    }
+    function changedKeys() { return request.resource.data.diff(resource.data).affectedKeys(); }
 
     // A user may change only these fields on their own profile. Role,
     // verification, deactivation, ID number and counters are function-only.
     function ownProfileUpdateAllowed() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let changed = changedKeys();
       let allowed = isOfficer() ? ['phone', 'fcmTokens', 'onDuty'] : ['phone', 'fcmTokens'];
       return changed.hasOnly(allowed)
         && (!changed.hasAny(['phone']) || request.resource.data.phone.matches('^[+]233[0-9]{9}$'))
@@ -32,6 +40,98 @@ service cloud.firestore {
         && resource.data.deactivated != true
         && ownProfileUpdateAllowed();
       allow create, delete: if false; // created by verifyId / adminCreateUser
+    }
+
+    match /settings/{doc} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---- Incidents -------------------------------------------------------
+
+    function incident(id) { return get(/databases/$(database)/documents/incidents/$(id)).data; }
+    function isReporterOf(id) { return signedIn() && incident(id).reporterId == request.auth.uid; }
+
+    // Officer moves along the state machine (mirrors IncidentStatus.canTransition).
+    function officerTransition(from, to) {
+      return (from == 'alerted' && to in ['accepted', 'false_alarm'])
+        || (from == 'accepted' && to in ['on_scene', 'resolved', 'false_alarm'])
+        || (from == 'on_scene' && to in ['resolved', 'false_alarm']);
+    }
+
+    function validNewIncident() {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['kind', 'category', 'description', 'status', 'reporterId',
+          'reporterName', 'reporterPhone', 'location', 'geohash', 'lastLocation', 'locationLabel',
+          'mediaUrls', 'assignedTo', 'createdAt', 'active', 'cancelledByReporter'])
+        && data.reporterId == request.auth.uid
+        && data.kind in ['sos', 'report']
+        && data.status == 'new'
+        && data.active == true
+        && data.cancelledByReporter == false
+        && data.createdAt == request.time
+        && data.assignedTo.size() == 0
+        && data.mediaUrls.size() <= 3
+        && (data.location == null || data.location is latlng);
+    }
+
+    // Reporter shares their live position while the incident is open.
+    function reporterLocationUpdate() {
+      return changedKeys().hasOnly(['lastLocation']) && request.resource.data.lastLocation is latlng;
+    }
+
+    // Reporter "I'm safe": only before an officer accepts (D9).
+    function reporterCancel() {
+      let data = request.resource.data;
+      return changedKeys().hasOnly(['status', 'cancelledByReporter', 'resolvedAt', 'active'])
+        && resource.data.status in ['new', 'alerted']
+        && data.status == 'resolved'
+        && data.cancelledByReporter == true
+        && data.active == false
+        && data.resolvedAt == request.time;
+    }
+
+    // Officer status changes. Accepting adds yourself to assignedTo and
+    // stamps acknowledgedAt (once).
+    function officerUpdate() {
+      let before = resource.data.status;
+      let after = request.resource.data.status;
+      let accepting = after == 'accepted' && before != 'accepted';
+      return changedKeys().hasOnly(['status', 'assignedTo', 'acknowledgedAt'])
+        && (before == after || officerTransition(before, after))
+        && (!accepting || (request.resource.data.assignedTo.hasAll([request.auth.uid])
+                           && request.resource.data.acknowledgedAt == request.time));
+    }
+
+    match /incidents/{incidentId} {
+      // A student never sees another student's incident.
+      allow read: if isOfficer() || (signedIn() && resource.data.reporterId == request.auth.uid);
+      allow create: if isMember() && notDeactivated() && validNewIncident();
+      allow update: if signedIn() && resource.data.reporterId == request.auth.uid
+        && resource.data.active == true
+        && (reporterLocationUpdate() || reporterCancel());
+      allow update: if isOfficer() && officerUpdate();
+      allow delete: if false; // incidents are never hard-deleted
+
+      // GPS fixes during an active SOS, written by the reporter's phone.
+      match /locations/{locationId} {
+        allow read: if isOfficer() || isReporterOf(incidentId);
+        allow create: if isReporterOf(incidentId)
+          && incident(incidentId).active == true
+          && request.resource.data.keys().hasOnly(['point', 'accuracy', 'timestamp'])
+          && request.resource.data.point is latlng
+          && request.resource.data.timestamp == request.time;
+      }
+
+      // Timeline. Clients may only add entries for their own actions.
+      match /events/{eventId} {
+        allow read: if isOfficer() || isReporterOf(incidentId);
+        allow create: if request.resource.data.actorId == request.auth.uid
+          && request.resource.data.timestamp == request.time
+          && ((isOfficer() && request.resource.data.type in
+                ['accepted', 'assigned', 'on_scene', 'note', 'resolved', 'false_alarm'])
+              || (isReporterOf(incidentId) && request.resource.data.type == 'cancelled'));
+      }
     }
 
     // Every other collection stays locked until its milestone adds rules.

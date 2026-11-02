@@ -48,7 +48,7 @@ const as = {
 
 before(async () => {
   env = await initializeTestEnvironment({
-    projectId: "demo-vvu-campus-safety",
+    projectId: "demo-vvu-rules-test", // separate from the dev data
     firestore: { rules: readFileSync(resolve(process.cwd(), "..", "firestore.rules"), "utf8") },
   });
 });
@@ -152,7 +152,7 @@ describe("idRoster", () => {
 
 describe("other collections", () => {
   it("stay locked until their milestone", async () => {
-    await assertFails(getDoc(doc(as.officer(), "incidents/any")));
+    await assertFails(getDoc(doc(as.officer(), "announcements/any")));
     await assertFails(setDoc(doc(as.kwame(), "incidents/any"), { status: "new" }));
   });
 });
