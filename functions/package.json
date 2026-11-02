@@ -16,6 +16,8 @@
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-vvu-campus-safety \"npm run test:rules:run\"",
     "test:rules:run": "npm run build:test && node --test --test-concurrency=1 \"lib-test/test/rules/**/*.test.js\"",
     "seed": "npm run build:test && node lib-test/scripts/seedRoster.js",
+    "seed:demo": "npm run build:test && node lib-test/scripts/seedDemo.js",
+    "make-admin": "npm run build:test && node lib-test/scripts/makeAdmin.js",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
