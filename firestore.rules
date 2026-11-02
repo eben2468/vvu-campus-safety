@@ -1,11 +1,39 @@
 rules_version = '2';
 
-// Locked down until Milestone 1 adds the real rules (docs/ARCHITECTURE.md §6).
-// Cloud Functions use the Admin SDK and are not affected by these rules.
+// Roles come from Auth custom claims set by Cloud Functions — never from
+// documents the client can write (docs/ARCHITECTURE.md §2, §6).
+// Cloud Functions use the Admin SDK and bypass these rules.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.role == 'admin'; }
+    function isOfficer() { return signedIn() && request.auth.token.role in ['officer', 'admin']; }
+
+    // A user may change only these fields on their own profile. Role,
+    // verification, deactivation, ID number and counters are function-only.
+    function ownProfileUpdateAllowed() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let allowed = isOfficer() ? ['phone', 'fcmTokens', 'onDuty'] : ['phone', 'fcmTokens'];
+      return changed.hasOnly(allowed)
+        && (!changed.hasAny(['phone']) || request.resource.data.phone.matches('^[+]233[0-9]{9}$'))
+        && (!changed.hasAny(['fcmTokens']) || request.resource.data.fcmTokens is list)
+        && (!changed.hasAny(['onDuty']) || request.resource.data.onDuty is bool);
     }
+
+    // Clients never read the roster; `verifyId` does, via the Admin SDK.
+    match /idRoster/{idNumber} {
+      allow read, write: if isAdmin();
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isOfficer());
+      allow update: if signedIn() && request.auth.uid == uid
+        && resource.data.deactivated != true
+        && ownProfileUpdateAllowed();
+      allow create, delete: if false; // created by verifyId / adminCreateUser
+    }
+
+    // Every other collection stays locked until its milestone adds rules.
   }
 }

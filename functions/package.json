@@ -7,11 +7,15 @@
   },
   "main": "lib/index.js",
   "scripts": {
-    "lint": "eslint src",
+    "lint": "eslint src test scripts",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
-    "test": "echo \"Function tests are added in Milestone 1\"",
+    "build:test": "tsc -p tsconfig.test.json",
+    "test": "npm run build:test && node --test \"lib-test/test/unit/**/*.test.js\"",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-vvu-campus-safety \"npm run test:rules:run\"",
+    "test:rules:run": "npm run build:test && node --test \"lib-test/test/rules/**/*.test.js\"",
+    "seed": "npm run build:test && node lib-test/scripts/seedRoster.js",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
@@ -21,7 +25,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^6.0.0",
     "eslint": "^10.14.0",
+    "firebase": "^13.1.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1"
   }
