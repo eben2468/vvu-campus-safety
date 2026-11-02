@@ -21,6 +21,8 @@ This is a final-year BSc IT project (proposal: "Design and Implementation of a S
 | `docs/BUILD_PLAN.md` | Picking the next task — milestones in order with checklists |
 | `docs/SETUP.md` | Environment, Firebase project, API keys, running locally |
 | `docs/DECISIONS.md` | Before assuming anything the proposal left open |
+| `docs/TESTING.md` | Running the test suites, alpha/beta sessions, Chapter 6 measurements |
+| `docs/USER_MANUAL.md`, `docs/ADMIN_MANUAL.md` | Changing anything users see — keep the manuals in step |
 
 ## Tech stack (fixed)
 

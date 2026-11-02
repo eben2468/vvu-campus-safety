@@ -93,14 +93,14 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 
 ## Milestone 7 — Testing, polish, documentation (Week 8)
 
-- [ ] Seed realistic demo data (≥ 100 past incidents across campus zones)
-- [ ] Unit tests: models, `IncidentStatus.canTransition`, validators
-- [ ] Widget tests: register, SOS countdown, report form
-- [ ] Rules tests passing for all collections
-- [ ] Alpha test with classmates; beta with security officers — record SOS latency and task times for Chapter 6
-- [ ] Fix issues; accessibility pass (font scaling, contrast)
-- [ ] Build release APK; deploy rules, functions, hosting
-- [ ] Write user manual (student/officer) and admin manual for Chapter 7
+- [x] Seed realistic demo data (≥ 100 past incidents across campus zones) — `npm run seed:demo`
+- [x] Unit tests: models, `IncidentStatus.canTransition`, validators
+- [x] Widget tests: register, SOS countdown, report form
+- [x] Rules tests passing for all collections
+- [ ] Alpha test with classmates; beta with security officers — record SOS latency and task times for Chapter 6 (protocol and record sheets: `docs/TESTING.md`)
+- [ ] Fix issues; accessibility pass (font scaling, contrast) — accessibility pass done (D49); fix what alpha/beta finds
+- [ ] Build release APK; deploy rules, functions, hosting — needs the real Firebase project and Android SDK (M0)
+- [x] Write user manual (student/officer) and admin manual for Chapter 7 — `docs/USER_MANUAL.md`, `docs/ADMIN_MANUAL.md`
 - [ ] Screenshots of every screen for the thesis
 
 ## Test checklist for Chapter 6

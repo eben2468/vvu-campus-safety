@@ -78,6 +78,8 @@ firebase emulators:start --import=./emulator-data --export-on-exit
 cd functions && npm run build -- --watch
 # seed sample roster + settings
 cd functions && npm run seed   # sample IDs are listed in functions/scripts/seedRoster.ts
+# optional: 120 past incidents over 12 weeks for the analytics demo
+cd functions && npm run seed:demo
 # run the app
 flutter run -d <android-device> --dart-define=USE_EMULATOR=true
 flutter run -d chrome --web-port 5000 --dart-define=USE_EMULATOR=true
@@ -92,11 +94,12 @@ Note: FCM push doesn't fully work in the emulator — test push notifications ag
 Self sign-up never creates admins. Bootstrap one with a one-off script run against the real project:
 
 ```bash
-# functions/scripts/makeAdmin.ts — uses firebase-admin with application default credentials
-npx ts-node functions/scripts/makeAdmin.ts you@example.com
+gcloud auth application-default login   # credentials stay on your PC, not in the repo
+cd functions
+npm run make-admin -- vvu-campus-safety cso@vvu.edu.gh "Full Name" +233XXXXXXXXX "temporary-password"
 ```
 
-It sets custom claims `{ role: 'admin', verified: true }` and creates the `users` doc. After that, create officers from the dashboard.
+`functions/scripts/makeAdmin.ts` sets custom claims `{ role: 'admin', verified: true }` and creates the `users` doc. If the email already has an account it is promoted and the password is ignored. After that, create officers from the dashboard.
 
 ## 8. Deploy
 

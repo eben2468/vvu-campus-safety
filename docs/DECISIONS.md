@@ -53,6 +53,8 @@ Record of choices the proposal left open. Update this file when something change
 | D45 | Emergency contacts | Private to the user (not even officers can read them). On SOS, `onIncidentCreated` texts up to 5 valid +233 numbers with the user's name and a Google Maps link, after alerting officers; an SMS failure never affects the alert. Until a gateway is chosen (O2) `ConsoleSmsProvider` logs the messages. | PRD §4.10; privacy of family numbers. |
 | D46 | Settings changes | `settings/app` can no longer be written by clients; the settings page saves through `adminUpdateSettings`, which validates every field and logs which fields changed. Boundary and zones are edited as text, one point or zone per line. | Keeps the audit log complete; text editing avoids a map-drawing tool for the MVP. |
 | D47 | Backups | `scheduledBackup` exports the whole database daily at 02:00 Accra time to `backups/YYYY-MM-DD` in the default bucket, retrying twice. | PRD §4.12. |
+| D48 | Demo data | `npm run seed:demo` writes 120 closed incidents over the last 12 weeks to the emulator, weighted towards the hostels and lecture halls at typical hours, with full timelines and realistic response times (SOS faster than reports). Ids start with `demo-` and the random numbers are seeded, so re-running rewrites the same data. Reporters are made-up `demo-reporter-N` uids with no accounts. | Gives the heatmap and charts something meaningful for the demo and screenshots without touching real data. |
+| D49 | Accessibility | Text colours meet WCAG AA (4.5:1), checked by `test/core/contrast_test.dart`; VVU gold is never used for text on white (dark amber `inProgress` instead). The SOS button and countdown work at 200% system text size; the countdown digit itself isn't scaled further. Buttons stay at least 56 dp high. Widget tests run at 360 dp width (small Android phones). | Users may be stressed, on small phones, or use large text. |
 
 ## Open — need an answer
 
@@ -75,3 +77,4 @@ Record of choices the proposal left open. Update this file when something change
 - 2026-11-02 — Milestone 4 response, chat, announcements: added D32–D36.
 - 2026-11-02 — Milestone 5 admin dashboard: added D37–D42.
 - 2026-11-02 — Milestone 6 analytics and extras: added D43–D47.
+- 2026-11-02 — Milestone 7 testing and documentation: added D48–D49.
