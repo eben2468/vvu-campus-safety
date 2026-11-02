@@ -14,6 +14,7 @@ typedef _Destination = ({String route, String label, IconData icon});
 const List<_Destination> _destinations = [
   (route: Routes.dashboard, label: 'Live board', icon: Icons.dashboard),
   (route: Routes.dashboardIncidents, label: 'Incidents', icon: Icons.list_alt),
+  (route: Routes.dashboardAnalytics, label: 'Analytics', icon: Icons.insights),
   (route: Routes.dashboardUsers, label: 'Users', icon: Icons.people),
   (route: Routes.dashboardRoster, label: 'ID roster', icon: Icons.badge),
   (
@@ -21,6 +22,8 @@ const List<_Destination> _destinations = [
     label: 'Announcements',
     icon: Icons.campaign,
   ),
+  (route: Routes.dashboardSettings, label: 'Settings', icon: Icons.settings),
+  (route: Routes.dashboardAuditLog, label: 'Audit log', icon: Icons.history),
 ];
 
 /// Frame for every admin dashboard page: app bar, side navigation and the

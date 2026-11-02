@@ -4,8 +4,12 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/errors/app_exception.dart';
+import '../../../models/app_settings.dart';
 import '../../../models/app_user.dart';
 import 'roster_csv.dart';
+
+/// A point as the admin functions expect it.
+typedef LatLngMap = Map<String, double>;
 
 /// Which users the users page lists.
 enum UserGroup {
@@ -91,6 +95,23 @@ class AdminRepository {
   /// Deactivating also blocks sign-in and signs the user out of the app.
   Future<void> setDeactivated(String uid, {required bool deactivated}) =>
       _call('adminSetRole', {'uid': uid, 'deactivated': deactivated});
+
+  /// Saves `settings/app` through `adminUpdateSettings`, which validates it
+  /// and writes the audit log. Returns the names of the fields that changed.
+  Future<List<String>> updateSettings(AppSettings settings) async {
+    LatLngMap point(GeoPoint p) => {'lat': p.latitude, 'lng': p.longitude};
+    final result = await _call('adminUpdateSettings', {
+      'categories': settings.categories,
+      'securityPhone': settings.securityPhone,
+      'sosCountdownSec': settings.sosCountdownSec,
+      'campusBoundary': [for (final p in settings.campusBoundary) point(p)],
+      'zones': [
+        for (final z in settings.zones)
+          {'name': z.name, 'center': point(z.center), 'radiusM': z.radiusM},
+      ],
+    });
+    return List<String>.from(result['changed'] as List? ?? const []);
+  }
 
   /// Uploads [rows] in batches of [rosterBatchSize]. Existing IDs are
   /// updated and stay linked to their accounts.

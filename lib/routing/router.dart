@@ -1,12 +1,15 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/admin/analytics/presentation/analytics_screen.dart';
 import '../features/admin/announcements/presentation/admin_announcements_screen.dart';
+import '../features/admin/audit/presentation/audit_log_screen.dart';
 import '../features/admin/incidents/presentation/incidents_screen.dart';
 import '../features/admin/live_board/presentation/live_board_screen.dart';
 import '../features/admin/roster/presentation/roster_import_screen.dart';
+import '../features/admin/settings/presentation/settings_screen.dart';
 import '../features/admin/shell/admin_shell.dart';
 import '../features/admin/users/presentation/users_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
@@ -17,6 +20,7 @@ import '../features/auth/presentation/splash_screen.dart';
 import '../features/auth/presentation/use_mobile_app_screen.dart';
 import '../features/auth/presentation/verify_id_screen.dart';
 import '../features/auth/providers.dart';
+import '../features/contacts/presentation/contacts_screen.dart';
 import '../features/incidents/presentation/chat_screen.dart';
 import '../features/incidents/presentation/incident_detail_screen.dart';
 import '../features/incidents/presentation/my_reports_screen.dart';
@@ -60,6 +64,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen()),
       GoRoute(path: Routes.report, builder: (_, _) => const ReportScreen()),
+      GoRoute(path: Routes.contacts, builder: (_, _) => const ContactsScreen()),
       GoRoute(
         path: Routes.myReports,
         builder: (_, _) => const MyReportsScreen(),
@@ -101,6 +106,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             Routes.dashboardAnnouncements,
             const AdminAnnouncementsScreen(),
           ),
+          _dashboardPage(Routes.dashboardAnalytics, const AnalyticsScreen()),
+          _dashboardPage(Routes.dashboardSettings, const SettingsScreen()),
+          _dashboardPage(Routes.dashboardAuditLog, const AuditLogScreen()),
         ],
       ),
       GoRoute(

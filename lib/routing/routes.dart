@@ -25,10 +25,14 @@ abstract final class Routes {
   static const dashboardUsers = '/dashboard/users';
   static const dashboardRoster = '/dashboard/roster';
   static const dashboardAnnouncements = '/dashboard/announcements';
+  static const dashboardAnalytics = '/dashboard/analytics';
+  static const dashboardSettings = '/dashboard/settings';
+  static const dashboardAuditLog = '/dashboard/audit-log';
 
   // Member pages (under /home so the role redirect allows them)
   static const report = '/home/report';
   static const myReports = '/home/reports';
+  static const contacts = '/home/contacts';
   static const reportDetailPattern = '/home/reports/:incidentId';
   static String reportDetail(String incidentId) => '/home/reports/$incidentId';
 

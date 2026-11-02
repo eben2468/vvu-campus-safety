@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/app_user.dart';
+import '../../models/audit_log_entry.dart';
 import '../../models/incident.dart';
 import '../../services/firestore_service.dart';
 import '../../services/functions_service.dart';
@@ -77,4 +78,63 @@ class UserGroupNotifier extends Notifier<UserGroup> {
 final usersProvider = StreamProvider<List<AppUser>>((ref) {
   final group = ref.watch(userGroupProvider);
   return ref.watch(adminRepositoryProvider).watchUsers(group);
+});
+
+/// The analytics page's date range (whole Accra days, [to] inclusive) and
+/// category; null category means all.
+typedef AnalyticsFilter = ({DateTime from, DateTime to, String? category});
+
+final analyticsFilterProvider =
+    NotifierProvider<AnalyticsFilterNotifier, AnalyticsFilter>(
+      AnalyticsFilterNotifier.new,
+    );
+
+class AnalyticsFilterNotifier extends Notifier<AnalyticsFilter> {
+  /// The last 30 days, today included.
+  @override
+  AnalyticsFilter build() {
+    final now = DateTime.now().toUtc();
+    final today = DateTime.utc(now.year, now.month, now.day);
+    return (
+      from: today.subtract(const Duration(days: 29)),
+      to: today,
+      category: null,
+    );
+  }
+
+  void setRange(DateTime from, DateTime to) =>
+      state = (from: from, to: to, category: state.category);
+
+  void setCategory(String? category) =>
+      state = (from: state.from, to: state.to, category: category);
+}
+
+/// Incidents in the analytics date range. Re-queries only when the dates
+/// change; the category is applied in [analyticsIncidentsProvider].
+final _incidentsInRangeProvider = StreamProvider<List<Incident>>((ref) {
+  final (from, to) = ref.watch(
+    analyticsFilterProvider.select((f) => (f.from, f.to)),
+  );
+  return ref
+      .watch(dashboardRepositoryProvider)
+      .watchBetween(from, to.add(const Duration(days: 1)));
+});
+
+final analyticsIncidentsProvider = Provider<AsyncValue<List<Incident>>>((ref) {
+  final category = ref.watch(analyticsFilterProvider.select((f) => f.category));
+  return ref
+      .watch(_incidentsInRangeProvider)
+      .whenData(
+        (list) => category == null
+            ? list
+            : list
+                  .where(
+                    (i) => category == 'SOS' ? i.isSos : i.category == category,
+                  )
+                  .toList(),
+      );
+});
+
+final auditLogsProvider = StreamProvider<List<AuditLogEntry>>((ref) {
+  return ref.watch(dashboardRepositoryProvider).watchAuditLogs();
 });

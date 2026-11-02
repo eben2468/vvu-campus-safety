@@ -101,6 +101,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               icon: const Icon(Icons.list_alt),
               label: const Text('My reports'),
             ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push(Routes.contacts),
+              icon: const Icon(Icons.contact_phone_outlined),
+              label: const Text('Emergency contacts'),
+            ),
           ],
         ),
       ),

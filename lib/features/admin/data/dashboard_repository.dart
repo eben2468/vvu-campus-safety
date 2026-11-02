@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/constants.dart';
+import '../../../models/audit_log_entry.dart';
 import '../../../models/incident.dart';
 import '../../../models/incident_event.dart';
 
@@ -41,6 +42,33 @@ class DashboardRepository {
         .limit(limit)
         .snapshots()
         .map(_toIncidents);
+  }
+
+  /// Incidents raised from [from] up to (not including) [to], newest first,
+  /// for the analytics page. Capped at 5000.
+  Stream<List<Incident>> watchBetween(DateTime from, DateTime to) {
+    return _incidents
+        .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(from))
+        .where('createdAt', isLessThan: Timestamp.fromDate(to))
+        .orderBy('createdAt', descending: true)
+        .limit(5000)
+        .snapshots()
+        .map(_toIncidents);
+  }
+
+  /// The most recent admin actions, newest first.
+  Stream<List<AuditLogEntry>> watchAuditLogs({int limit = 200}) {
+    return _firestore
+        .collection(Collections.auditLogs)
+        .orderBy('timestamp', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map(
+          (snap) => [
+            for (final doc in snap.docs)
+              AuditLogEntry.fromMap(doc.id, doc.data()),
+          ],
+        );
   }
 
   /// The latest timeline entries across all incidents (a collection-group
