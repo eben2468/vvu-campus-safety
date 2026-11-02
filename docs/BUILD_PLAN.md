@@ -50,10 +50,10 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 
 ## Milestone 3 — Incident reporting (Week 4)
 
-- [ ] Report form: category, description, up to 3 photos (compress), map pin
-- [ ] Upload to Storage + `storage.rules`
-- [ ] My reports list with status chips
-- [ ] Incident detail with photos, map and `events` timeline
+- [x] Report form: category, description, up to 3 photos (compress), map pin
+- [x] Upload to Storage + `storage.rules`
+- [x] My reports list with status chips
+- [x] Incident detail with photos, map and `events` timeline
 
 **Demo:** report a "Theft" with two photos; officer receives it and sees the photos.
 

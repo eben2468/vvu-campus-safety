@@ -34,6 +34,9 @@ Record of choices the proposal left open. Update this file when something change
 | D26 | Onboarding | Permissions screen shown once per device after first sign-in on mobile (`shared_preferences`). Declining never blocks; the home screen shows a "location off" card with a fix button. | PRD: handle denial gracefully with a clear explanation. |
 | D27 | Timeline events | `onIncidentCreated` writes the `created` and `alerted` events (so offline SOS creation is a single write). Clients may only write events for their own actions: reporters `cancelled`; officers `accepted`, `assigned`, `on_scene`, `note`, `resolved`, `false_alarm`. | Keeps system events trustworthy. |
 | D28 | Rules test project | Rules tests use project `demo-vvu-rules-test` and run serially, so they can run against the dev emulators without wiping dev data. | Lets tests run while the app demo is up. |
+| D29 | Photo access | Each photo carries custom metadata `reporterId`; `storage.rules` lets that user and officers read it, with no Firestore lookup. `mediaUrls` stores Firebase download URLs, which are only visible to people who can already read the incident. Uploads are create-only (no overwrite or delete), images only, < 2 MB. | ARCHITECTURE §6 offered this option; it keeps Storage rules simple and evidence tamper-proof. |
+| D30 | Report submission order | The app picks the incident id, uploads the compressed photos under `incidents/{id}/`, then writes the incident. Photo upload needs a connection (clear error if not); the document write itself queues offline like SOS. | Photos are optional; a report with photos must not point at files that don't exist. |
+| D31 | "My reports" | Lists all the user's incidents, SOS alerts included, newest first. Report descriptions must be 10–1000 characters, enforced in the form and in `firestore.rules`. | One place to follow up on anything you raised. |
 
 ## Open — need an answer
 
@@ -52,3 +55,4 @@ Record of choices the proposal left open. Update this file when something change
 - 2026-11-02 — Milestone 0 setup: added D12–D17.
 - 2026-11-02 — Milestone 1 auth: added D18–D22.
 - 2026-11-02 — Milestone 2 SOS: added D23–D28.
+- 2026-11-02 — Milestone 3 reports: added D29–D31.
