@@ -6,10 +6,12 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'core/env.dart';
 import 'firebase_options.dart';
+import 'services/preferences_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +19,13 @@ Future<void> main() async {
   if (useEmulator) {
     await _connectToEmulators();
   }
-  runApp(const ProviderScope(child: App()));
+  final preferences = await SharedPreferences.getInstance();
+  runApp(
+    ProviderScope(
+      overrides: [sharedPreferencesProvider.overrideWithValue(preferences)],
+      child: const App(),
+    ),
+  );
 }
 
 /// Points every Firebase SDK at the local Emulator Suite.

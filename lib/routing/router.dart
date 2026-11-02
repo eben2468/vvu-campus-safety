@@ -5,28 +5,34 @@ import 'package:go_router/go_router.dart';
 import '../features/admin/live_board/presentation/live_board_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
+import '../features/auth/presentation/permissions_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/auth/presentation/use_mobile_app_screen.dart';
 import '../features/auth/presentation/verify_id_screen.dart';
 import '../features/auth/providers.dart';
+import '../features/officer/presentation/alert_detail_screen.dart';
 import '../features/officer/presentation/officer_home_screen.dart';
 import '../features/sos/presentation/home_screen.dart';
+import '../services/preferences_service.dart';
 import 'redirect.dart';
 import 'routes.dart';
 
-/// App router. Re-runs [redirectFor] whenever the session changes.
+/// App router. Re-runs [redirectFor] whenever the session or onboarding
+/// state changes.
 final routerProvider = Provider<GoRouter>((ref) {
-  final sessionChanged = ValueNotifier<int>(0);
-  ref.listen(sessionProvider, (_, _) => sessionChanged.value++);
+  final refresh = ValueNotifier<int>(0);
+  ref.listen(sessionProvider, (_, _) => refresh.value++);
+  ref.listen(onboardingDoneProvider, (_, _) => refresh.value++);
 
   final router = GoRouter(
     initialLocation: Routes.splash,
-    refreshListenable: sessionChanged,
+    refreshListenable: refresh,
     redirect: (context, state) => redirectFor(
       ref.read(sessionProvider),
       state.matchedLocation,
       isWeb: kIsWeb,
+      onboardingDone: ref.read(onboardingDoneProvider),
     ),
     routes: [
       GoRoute(path: Routes.splash, builder: (_, _) => const SplashScreen()),
@@ -37,10 +43,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const ForgotPasswordScreen(),
       ),
       GoRoute(path: Routes.verifyId, builder: (_, _) => const VerifyIdScreen()),
+      GoRoute(
+        path: Routes.welcome,
+        builder: (_, _) => const PermissionsScreen(),
+      ),
       GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen()),
       GoRoute(
         path: Routes.officerHome,
         builder: (_, _) => const OfficerHomeScreen(),
+      ),
+      GoRoute(
+        path: Routes.incidentAlertPattern,
+        builder: (_, state) =>
+            AlertDetailScreen(incidentId: state.pathParameters['incidentId']!),
       ),
       GoRoute(
         path: Routes.dashboard,
@@ -55,7 +70,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   ref.onDispose(() {
     router.dispose();
-    sessionChanged.dispose();
+    refresh.dispose();
   });
   return router;
 });

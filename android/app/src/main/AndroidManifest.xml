@@ -33,6 +33,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Pushes without a channel use the SOS alert channel. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="sos_alerts" />
         <!-- Google Maps key, injected from MAPS_API_KEY in android/local.properties. -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -55,11 +59,11 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.SENDTO"/>
-            <data android:scheme="smsto"/>
+            <data android:scheme="sms"/>
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW"/>
-            <data android:scheme="geo"/>
+            <data android:scheme="https"/>
         </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

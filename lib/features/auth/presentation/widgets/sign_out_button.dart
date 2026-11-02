@@ -12,7 +12,7 @@ class SignOutButton extends ConsumerWidget {
     return IconButton(
       tooltip: 'Sign out',
       icon: const Icon(Icons.logout),
-      onPressed: () => ref.read(authRepositoryProvider).signOut(),
+      onPressed: () => ref.read(signOutProvider)(),
     );
   }
 }

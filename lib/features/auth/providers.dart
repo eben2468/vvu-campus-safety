@@ -5,6 +5,7 @@ import '../../models/app_user.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/functions_service.dart';
+import '../notifications/providers.dart';
 import 'data/auth_repository.dart';
 import 'data/session.dart';
 import 'data/user_repository.dart';
@@ -80,3 +81,19 @@ class SignOutNotice extends Notifier<String?> {
 
   void clear() => state = null;
 }
+
+/// Signs out after unregistering this device from push, so it stops
+/// receiving the user's alerts. Never blocked for long by a bad connection.
+final signOutProvider = Provider<Future<void> Function()>((ref) {
+  return () async {
+    final session = ref.read(sessionProvider);
+    final uid = session.profile?.uid;
+    if (uid != null) {
+      await ref
+          .read(pushRepositoryProvider)
+          .unregisterDevice(uid, session.role)
+          .timeout(const Duration(seconds: 5), onTimeout: () {});
+    }
+    await ref.read(authRepositoryProvider).signOut();
+  };
+});

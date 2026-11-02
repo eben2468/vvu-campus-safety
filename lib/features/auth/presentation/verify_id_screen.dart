@@ -66,9 +66,7 @@ class _VerifyIdScreenState extends ConsumerState<VerifyIdScreen> {
         SubmitButton(label: 'Verify ID', busy: _busy, onPressed: _submit),
         const SizedBox(height: 8),
         TextButton(
-          onPressed: _busy
-              ? null
-              : () => ref.read(authRepositoryProvider).signOut(),
+          onPressed: _busy ? null : () => ref.read(signOutProvider)(),
           child: const Text('Sign out'),
         ),
       ],

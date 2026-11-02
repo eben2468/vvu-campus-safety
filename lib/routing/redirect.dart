@@ -13,7 +13,15 @@ String homeFor(UserRole role, {required bool isWeb}) {
 
 /// Where to send the user given their [session] and current [location].
 /// Returns null to stay put. Kept free of Flutter so it is easy to test.
-String? redirectFor(Session session, String location, {required bool isWeb}) {
+///
+/// On a phone, a signed-in user who hasn't seen the permissions screen
+/// ([onboardingDone] false) is shown it once before their home.
+String? redirectFor(
+  Session session,
+  String location, {
+  required bool isWeb,
+  bool onboardingDone = true,
+}) {
   switch (session.status) {
     case SessionStatus.loading:
       // Stay put: the app starts on the splash screen, and a brief reload
@@ -30,6 +38,10 @@ String? redirectFor(Session session, String location, {required bool isWeb}) {
           ? null
           : Routes.verifyId;
     case SessionStatus.active:
+      if (!isWeb && !onboardingDone) {
+        return location == Routes.welcome ? null : Routes.welcome;
+      }
+      // Each home is a prefix for its pages, e.g. /officer/incident/<id>.
       final home = homeFor(session.role!, isWeb: isWeb);
       return location.startsWith(home) ? null : home;
   }

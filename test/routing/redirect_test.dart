@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vvu_campus_safety/core/constants.dart';
 import 'package:vvu_campus_safety/features/auth/data/session.dart';
+import 'package:vvu_campus_safety/features/notifications/providers.dart';
 import 'package:vvu_campus_safety/routing/redirect.dart';
 import 'package:vvu_campus_safety/routing/routes.dart';
 
@@ -133,5 +134,75 @@ void main() {
       );
       expect(const TokenClaims(uid: 'a').canUseApp, isFalse);
     });
+  });
+
+  group('first run on a phone', () {
+    test('shows the permissions screen before home', () {
+      expect(
+        redirectFor(
+          active(UserRole.student),
+          Routes.login,
+          isWeb: false,
+          onboardingDone: false,
+        ),
+        Routes.welcome,
+      );
+      expect(
+        redirectFor(
+          active(UserRole.officer),
+          Routes.welcome,
+          isWeb: false,
+          onboardingDone: false,
+        ),
+        isNull,
+      );
+    });
+
+    test('leaves the permissions screen once done', () {
+      expect(
+        redirectFor(active(UserRole.student), Routes.welcome, isWeb: false),
+        Routes.home,
+      );
+    });
+
+    test('is skipped on the web dashboard', () {
+      expect(
+        redirectFor(
+          active(UserRole.admin),
+          Routes.login,
+          isWeb: true,
+          onboardingDone: false,
+        ),
+        Routes.dashboard,
+      );
+    });
+  });
+
+  test('officers can open alert pages', () {
+    expect(
+      redirectFor(
+        active(UserRole.officer),
+        Routes.incidentAlert('s1'),
+        isWeb: false,
+      ),
+      isNull,
+    );
+    expect(
+      redirectFor(
+        active(UserRole.student),
+        Routes.incidentAlert('s1'),
+        isWeb: false,
+      ),
+      Routes.home,
+    );
+  });
+
+  test('push taps open the right screen', () {
+    expect(
+      routeForPush({'type': 'sos', 'incidentId': 's1'}),
+      Routes.incidentAlert('s1'),
+    );
+    expect(routeForPush({'type': 'status', 'incidentId': 's1'}), Routes.splash);
+    expect(routeForPush({}), Routes.splash);
   });
 }
