@@ -4,15 +4,14 @@ import 'package:flutter/material.dart';
 import '../../../core/env.dart';
 import '../../../core/theme.dart';
 
-/// First screen shown while the app starts. In Milestone 1 the router
-/// redirects from here to login or the role's home screen.
+/// Shown while the app works out who is signed in. The router then
+/// redirects to login or the user's home screen.
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final projectId = Firebase.app().options.projectId;
 
     return Scaffold(
       backgroundColor: AppColors.vvuBlue,
@@ -39,12 +38,14 @@ class SplashScreen extends StatelessWidget {
                   style: textTheme.titleMedium?.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: 32),
-                Text(
-                  useEmulator
-                      ? 'Connected to local emulators ($projectId)'
-                      : 'Connected to $projectId',
-                  style: textTheme.bodySmall?.copyWith(color: Colors.white60),
-                ),
+                const CircularProgressIndicator(color: AppColors.vvuGold),
+                if (useEmulator) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Local emulators (${Firebase.app().options.projectId})',
+                    style: textTheme.bodySmall?.copyWith(color: Colors.white60),
+                  ),
+                ],
               ],
             ),
           ),
