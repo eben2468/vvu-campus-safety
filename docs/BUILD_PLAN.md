@@ -20,14 +20,14 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 
 ## Milestone 1 — Auth and ID verification (Week 1)
 
-- [ ] Models: `AppUser`, `IncidentStatus` enum
-- [ ] `verifyId` callable function + unit test
-- [ ] Seed script: `functions/scripts/seedRoster.ts` loads sample `idRoster` and `settings/app` into the emulator
-- [ ] Register screen → calls `verifyId`; success/failure states
-- [ ] Login, forgot password, logout; email verification banner
-- [ ] Router redirects by auth state + `role` claim (student/staff → home, officer → officer home, admin on web → dashboard)
-- [ ] Deactivated user handling
-- [ ] First version of `firestore.rules` for `users` and `idRoster` + rules tests
+- [x] Models: `AppUser`, `IncidentStatus` enum
+- [x] `verifyId` callable function + unit test
+- [x] Seed script: `functions/scripts/seedRoster.ts` loads sample `idRoster` and `settings/app` into the emulator
+- [x] Register screen → calls `verifyId`; success/failure states
+- [x] Login, forgot password, logout; email verification banner
+- [x] Router redirects by auth state + `role` claim (student/staff → home, officer → officer home, admin on web → dashboard)
+- [x] Deactivated user handling
+- [x] First version of `firestore.rules` for `users` and `idRoster` + rules tests
 
 **Demo:** a seeded student ID registers and lands on home; a fake ID is rejected.
 

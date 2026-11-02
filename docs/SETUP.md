@@ -77,7 +77,7 @@ firebase emulators:start --import=./emulator-data --export-on-exit
 # in another terminal
 cd functions && npm run build -- --watch
 # seed sample roster + settings
-npx ts-node functions/scripts/seedRoster.ts
+cd functions && npm run seed   # sample IDs are listed in functions/scripts/seedRoster.ts
 # run the app
 flutter run -d <android-device> --dart-define=USE_EMULATOR=true
 flutter run -d chrome --web-port 5000 --dart-define=USE_EMULATOR=true

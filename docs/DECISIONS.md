@@ -22,7 +22,12 @@ Record of choices the proposal left open. Update this file when something change
 | D14 | Firebase client config in git | `firebase_options.dart` / `google-services.json` are committed. Service accounts, Maps keys (`android/local.properties`) and the SMS key (Functions secret) are never committed. | Firebase client keys only identify the project; access is enforced by security rules and API key restrictions. |
 | D15 | Brand colours | VVU blue `#003A70`, gold `#F2B417`, SOS red `#C62828`; buttons at least 56 dp tall. | Approximate brand colours — swap in official hex values when the brand guide is available. |
 | D16 | Rules before M1 | `firestore.rules` and `storage.rules` deny all client access until Milestones 1 and 3. | Safe default; nothing is readable by accident. |
-| D17 | Functions test library | `firebase-functions-test` not installed yet: its peer range stops at `firebase-admin` 13 and we use 14. Test pure logic directly (and through the emulator) in M1, or add it when it supports admin 14. | Avoids `--force` installs. |
+| D17 | Functions test library | `firebase-functions-test` not installed yet: its peer range stops at `firebase-admin` 13 and we use 14. M1 tests the pure `roster.ts` logic with `node:test` and the rules with `@firebase/rules-unit-testing`, or add it when it supports admin 14. | Avoids `--force` installs. |
+| D18 | Name check in `verifyId` | The roster surname (last word of `fullName`) must appear among the words the user typed, ignoring case, order and hyphens. The `users` doc stores the roster name, not the typed one. Unknown/inactive IDs are rejected before the name check; "already claimed" only after it. | PRD asks for a case-insensitive surname match; this tolerates first/last name order and reveals less about IDs someone guesses. |
+| D19 | Failed registration | The app creates the Auth account, calls `verifyId`, and deletes the account if verification fails. If the delete fails, the user is still signed in but unverified and the router shows a "Verify your VVU ID" screen to retry. `verifyId` is idempotent for the same uid. | Meets "no usable account" without a server-side registration endpoint. |
+| D20 | Profile fields users may edit | Rules use an allowlist: `phone` (+233 format) and `fcmTokens`; officers also `onDuty`. Deactivated users can't edit. | Safer than the denylist in the ARCHITECTURE outline — new fields are protected by default. |
+| D21 | Role homes and platforms | Mobile: student/staff → `/home`, officer and admin → `/officer`. Web: admin → `/dashboard`, everyone else → "use the mobile app". Self sign-up link hidden on web. | ARCHITECTURE §1: web is admin-only; admins can do everything officers can. |
+| D22 | Deactivated users | The app watches `users/{uid}.deactivated`; when true it signs out and shows why on the login screen. Auth `disabled` (set by `adminSetRole`) blocks new sign-ins with the same message. | Covers both a live session and later log-ins. |
 
 ## Open — need an answer
 
@@ -39,3 +44,4 @@ Record of choices the proposal left open. Update this file when something change
 
 - 2026-11-02 — Initial decisions extracted from the proposal and build spec.
 - 2026-11-02 — Milestone 0 setup: added D12–D17.
+- 2026-11-02 — Milestone 1 auth: added D18–D22.
