@@ -133,7 +133,7 @@ class ResponseTrendChart extends StatelessWidget {
         lineBarsData: [
           LineChartBarData(
             spots: spots,
-            color: AppColors.vvuGold,
+            color: AppColors.inProgress,
             barWidth: 3,
             dotData: const FlDotData(),
           ),

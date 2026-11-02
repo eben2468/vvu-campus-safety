@@ -27,18 +27,22 @@ class SosButton extends StatelessWidget {
           ),
           child: busy
               ? const CircularProgressIndicator(color: Colors.white)
-              : const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'SOS',
-                      style: TextStyle(
-                        fontSize: 64,
-                        fontWeight: FontWeight.w900,
+              // Shrinks to fit the circle when the phone uses very large text.
+              : const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'SOS',
+                        style: TextStyle(
+                          fontSize: 64,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                    ),
-                    Text('Press for help', style: TextStyle(fontSize: 16)),
-                  ],
+                      Text('Press for help', style: TextStyle(fontSize: 16)),
+                    ],
+                  ),
                 ),
         ),
       ),

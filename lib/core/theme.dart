@@ -9,6 +9,13 @@ abstract final class AppColors {
   static const vvuGold = Color(0xFFF2B417);
   static const sosRed = Color(0xFFC62828);
   static const safeGreen = Color(0xFF2E7D32);
+
+  /// Dark amber for text and lines in the gold family: gold itself is too
+  /// light to read on white (WCAG needs 4.5:1 for text).
+  static const inProgress = Color(0xFF7A5B00);
+
+  /// Grey that still reads on white (false alarms, closed items).
+  static const muted = Color(0xFF616161);
 }
 
 /// Minimum height for buttons and other tappable controls. Bigger than the

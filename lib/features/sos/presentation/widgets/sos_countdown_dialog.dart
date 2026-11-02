@@ -75,8 +75,10 @@ class _SosCountdownState extends State<_SosCountdown> {
                 style: textTheme.headlineSmall?.copyWith(color: Colors.white),
                 textAlign: TextAlign.center,
               ),
+              // Already huge; it isn't scaled further so it fits small phones.
               Text(
                 '$_remaining',
+                textScaler: TextScaler.noScaling,
                 style: const TextStyle(
                   fontSize: 120,
                   fontWeight: FontWeight.w900,
@@ -86,8 +88,9 @@ class _SosCountdownState extends State<_SosCountdown> {
                 semanticsLabel: '$_remaining seconds',
               ),
               const Spacer(),
-              SizedBox(
-                height: 72,
+              // At least 72 high, taller if the phone uses large text.
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 72),
                 child: FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.white,

@@ -97,6 +97,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             children: [
               if (_error != null) FormMessage(_error!),
               DropdownButtonFormField<String>(
+                isExpanded: true, // fit narrow phones and large text
                 initialValue: _category,
                 decoration: const InputDecoration(labelText: 'What happened?'),
                 items: [
