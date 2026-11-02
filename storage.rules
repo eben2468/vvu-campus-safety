@@ -17,15 +17,16 @@ service firebase.storage {
       allow read: if isOfficer()
         || (signedIn() && resource.metadata.reporterId == request.auth.uid);
 
-      // Photos only (no video in the MVP), under 2 MB, tagged with the
-      // uploader as reporter. Evidence can't be replaced or deleted — note
-      // that uploading over an existing file counts as `create`, hence
-      // `resource == null`.
-      allow create: if isMember()
-        && resource == null
+      // Photos only (no video in the MVP), under 2 MB. Members tag uploads
+      // with themselves as reporter; officers adding a chat photo tag it
+      // with the incident's reporter so the reporter can open it.
+      // Evidence can't be replaced or deleted — uploading over an existing
+      // file counts as `create`, hence `resource == null`.
+      allow create: if resource == null
         && request.resource.contentType.matches('image/.*')
         && request.resource.size < 2 * 1024 * 1024
-        && request.resource.metadata.reporterId == request.auth.uid;
+        && ((isMember() && request.resource.metadata.reporterId == request.auth.uid)
+            || (isOfficer() && request.resource.metadata.reporterId is string));
       allow update, delete: if false;
     }
 

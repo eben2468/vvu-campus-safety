@@ -1,6 +1,6 @@
 /**
- * Loads a sample ID roster, the default `settings/app` document and test
- * admin/officer logins into the local emulators. Run from /functions with
+ * Loads a sample ID roster, the default `settings/app` document, test
+ * admin/officer logins and sample announcements into the local emulators. Run from /functions with
  * the emulators started:
  *
  *   npm run seed
@@ -55,7 +55,7 @@ const staffAccounts = [
 ];
 
 /** Creates (or updates) an emulator Auth user with claims and a users doc. */
-async function seedStaffAccount(account: (typeof staffAccounts)[number]): Promise<void> {
+async function seedStaffAccount(account: (typeof staffAccounts)[number]): Promise<string> {
   const auth = getAuth();
   const user = await auth.getUserByEmail(account.email).catch(() =>
     auth.createUser({ email: account.email, password: PASSWORD, emailVerified: true, displayName: account.fullName }),
@@ -74,7 +74,24 @@ async function seedStaffAccount(account: (typeof staffAccounts)[number]): Promis
     deactivated: false,
     createdAt: FieldValue.serverTimestamp(),
   }, { merge: true });
+  return user.uid;
 }
+
+// Fixed ids, so re-seeding doesn't duplicate them.
+const announcements = [
+  {
+    id: "welcome",
+    title: "Welcome to VVU Campus Safety",
+    body: "Press SOS in any emergency and security will see where you are. Use Report for non-urgent incidents.",
+    audience: "all",
+  },
+  {
+    id: "night-escort",
+    title: "Night escort service",
+    body: "After 10 pm, security officers can walk you from the library to the hostels. Call the Security Office to book.",
+    audience: "students",
+  },
+];
 
 async function main(): Promise<void> {
   initializeApp({ projectId: PROJECT_ID });
@@ -92,8 +109,15 @@ async function main(): Promise<void> {
   batch.set(db.collection("settings").doc("app"), settings);
 
   await batch.commit();
+  const uids: string[] = [];
   for (const account of staffAccounts) {
-    await seedStaffAccount(account);
+    uids.push(await seedStaffAccount(account));
+  }
+  for (const { id, ...announcement } of announcements) {
+    const ref = db.collection("announcements").doc(id);
+    if (!(await ref.get()).exists) {
+      await ref.set({ ...announcement, createdBy: uids[0], createdAt: FieldValue.serverTimestamp() });
+    }
   }
   console.log(`Seeded ${roster.length} roster entries and settings/app into ${process.env.FIRESTORE_EMULATOR_HOST}.`);
   console.log(`Test logins (password ${PASSWORD}): ${staffAccounts.map((a) => `${a.email} (${a.role})`).join(", ")}`);

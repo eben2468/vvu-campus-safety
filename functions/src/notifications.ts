@@ -1,4 +1,4 @@
-import { DocumentSnapshot, FieldValue, getFirestore } from "firebase-admin/firestore";
+import { DocumentSnapshot, FieldValue, getFirestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { logger } from "firebase-functions/v2";
 
@@ -53,5 +53,34 @@ export async function pushToUsers(
     // Expected on the emulator: FCM is not emulated.
     logger.warn("Push failed", { error: String(error) });
     return 0;
+  }
+}
+
+/** Officers and admins who are on duty — the people who get new alerts. */
+export async function onDutySecurity(): Promise<QueryDocumentSnapshot[]> {
+  const snap = await getFirestore()
+    .collection("users")
+    .where("role", "in", ["officer", "admin"])
+    .where("onDuty", "==", true)
+    .get();
+  return snap.docs;
+}
+
+/**
+ * Sends to an FCM topic (`all`, `students`, `staff`, `officers`), which
+ * each device subscribes to at sign-in. Never throws.
+ */
+export async function pushToTopic(topic: string, content: PushContent, data: Record<string, string>): Promise<boolean> {
+  try {
+    await getMessaging().send({
+      topic,
+      notification: content,
+      data,
+      android: { priority: "high", notification: { channelId: "announcements" } },
+    });
+    return true;
+  } catch (error) {
+    logger.warn("Topic push failed", { topic, error: String(error) });
+    return false;
   }
 }

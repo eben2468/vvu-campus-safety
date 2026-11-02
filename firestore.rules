@@ -94,16 +94,23 @@ service cloud.firestore {
         && data.resolvedAt == request.time;
     }
 
-    // Officer status changes. Accepting adds yourself to assignedTo and
-    // stamps acknowledgedAt (once).
+    // Officer changes to an open incident (PRD §4.5):
+    // - accept: add yourself to assignedTo and stamp acknowledgedAt;
+    // - on scene / resolve: only officers already assigned, or an admin;
+    // - false alarm: anyone on the security team;
+    // - assign: assignedTo may only grow.
     function officerUpdate() {
       let before = resource.data.status;
       let after = request.resource.data.status;
       let accepting = after == 'accepted' && before != 'accepted';
-      return changedKeys().hasOnly(['status', 'assignedTo', 'acknowledgedAt'])
+      let assigned = resource.data.assignedTo.hasAny([request.auth.uid]) || isAdmin();
+      return before in ['alerted', 'accepted', 'on_scene']
+        && changedKeys().hasOnly(['status', 'assignedTo', 'acknowledgedAt'])
         && (before == after || officerTransition(before, after))
         && (!accepting || (request.resource.data.assignedTo.hasAll([request.auth.uid])
-                           && request.resource.data.acknowledgedAt == request.time));
+                           && request.resource.data.acknowledgedAt == request.time))
+        && (before == after || !(after in ['on_scene', 'resolved']) || assigned)
+        && request.resource.data.assignedTo.hasAll(resource.data.assignedTo);
     }
 
     match /incidents/{incidentId} {
@@ -131,10 +138,48 @@ service cloud.firestore {
         allow read: if isOfficer() || isReporterOf(incidentId);
         allow create: if request.resource.data.actorId == request.auth.uid
           && request.resource.data.timestamp == request.time
+          && request.resource.data.text is string && request.resource.data.text.size() <= 1200
           && ((isOfficer() && request.resource.data.type in
                 ['accepted', 'assigned', 'on_scene', 'note', 'resolved', 'false_alarm'])
               || (isReporterOf(incidentId) && request.resource.data.type == 'cancelled'));
       }
+
+      // Chat between the reporter and security (PRD §4.6). Messages are
+      // permanent and always in the sender's own name and role.
+      match /messages/{messageId} {
+        allow read: if isOfficer() || isReporterOf(incidentId);
+        allow create: if (isOfficer() || isReporterOf(incidentId))
+          && request.resource.data.keys().hasOnly(['senderId', 'senderName', 'senderRole', 'text', 'imageUrl', 'timestamp'])
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.senderRole == request.auth.token.role
+          && request.resource.data.timestamp == request.time
+          && request.resource.data.text is string && request.resource.data.text.size() <= 2000
+          && (request.resource.data.text.size() > 0 || request.resource.data.imageUrl is string);
+      }
+    }
+
+    // ---- Announcements ---------------------------------------------------
+
+    // Audiences a role may read (matches Announcement.visibleTo in the app).
+    function visibleAudiences() {
+      let role = request.auth.token.role;
+      return role == 'student' ? ['all', 'students']
+        : role == 'staff' ? ['all', 'staff']
+        : role == 'officer' ? ['all', 'officers']
+        : ['all'];
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.audience in visibleAudiences());
+      // Posted from the dashboard; onAnnouncementCreated pushes it to its topic.
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['title', 'body', 'audience', 'createdBy', 'createdAt'])
+        && request.resource.data.audience in ['all', 'students', 'staff', 'officers']
+        && request.resource.data.title is string && request.resource.data.title.size() > 0
+        && request.resource.data.body is string && request.resource.data.body.size() > 0
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if isAdmin();
     }
 
     // Every other collection stays locked until its milestone adds rules.

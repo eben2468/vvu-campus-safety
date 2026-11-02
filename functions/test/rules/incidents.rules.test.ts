@@ -334,3 +334,130 @@ describe("settings", () => {
     await assertSucceeds(updateDoc(doc(as.admin(), "settings/app"), { securityPhone: "+233111111111" }));
   });
 });
+
+describe("officer response actions", () => {
+  it("assigned officers can move to on scene and resolve", async () => {
+    await seedIncident("s1", { status: "accepted", assignedTo: ["officer1"] });
+    await assertSucceeds(updateDoc(doc(as.officer(), "incidents/s1"), { status: "on_scene" }));
+    await assertSucceeds(updateDoc(doc(as.officer(), "incidents/s1"), { status: "resolved" }));
+  });
+
+  it("officers not on the incident cannot mark on scene or resolve", async () => {
+    await seedIncident("s1", { status: "accepted", assignedTo: ["officer1"] });
+    await assertFails(updateDoc(doc(as.officer2(), "incidents/s1"), { status: "on_scene" }));
+    await assertFails(updateDoc(doc(as.officer2(), "incidents/s1"), { status: "resolved" }));
+  });
+
+  it("admins can resolve any open incident", async () => {
+    await seedIncident("s1", { status: "on_scene", assignedTo: ["officer1"] });
+    await assertSucceeds(updateDoc(doc(as.admin(), "incidents/s1"), { status: "resolved" }));
+  });
+
+  it("any officer can mark a false alarm", async () => {
+    await seedIncident("s1", { status: "accepted", assignedTo: ["officer1"] });
+    await assertSucceeds(updateDoc(doc(as.officer2(), "incidents/s1"), { status: "false_alarm" }));
+  });
+
+  it("can assign more officers but never remove them", async () => {
+    await seedIncident("s1", { status: "accepted", assignedTo: ["officer1"] });
+    await assertSucceeds(updateDoc(doc(as.officer(), "incidents/s1"), { assignedTo: arrayUnion("officer2") }));
+    await assertFails(updateDoc(doc(as.officer(), "incidents/s1"), { assignedTo: ["officer2"] }));
+  });
+
+  it("closed incidents can't be changed by officers", async () => {
+    await seedIncident("s1", { status: "resolved", active: false, assignedTo: ["officer1"] });
+    await assertFails(updateDoc(doc(as.officer(), "incidents/s1"), { assignedTo: arrayUnion("officer2") }));
+  });
+
+  it("notes are limited in length", async () => {
+    await seedIncident("s1", { status: "accepted", assignedTo: ["officer1"] });
+    const note = (text: string) => ({ type: "note", actorId: "officer1", actorName: "Test", text, timestamp: serverTimestamp() });
+    await assertSucceeds(addDoc(collection(as.officer(), "incidents/s1/events"), note("Found the bag near the gate.")));
+    await assertFails(addDoc(collection(as.officer(), "incidents/s1/events"), note("x".repeat(1201))));
+  });
+});
+
+describe("chat messages", () => {
+  const message = (senderId: string, senderRole: string, fields: Record<string, unknown> = {}) => ({
+    senderId,
+    senderName: "Test",
+    senderRole,
+    text: "Hello",
+    imageUrl: null,
+    timestamp: serverTimestamp(),
+    ...fields,
+  });
+
+  beforeEach(async () => {
+    await seedIncident("s1", { status: "accepted", assignedTo: ["officer1"] });
+  });
+
+  it("the reporter and officers can talk", async () => {
+    await assertSucceeds(addDoc(collection(as.kwame(), "incidents/s1/messages"), message("kwame", "student")));
+    await assertSucceeds(addDoc(collection(as.officer(), "incidents/s1/messages"), message("officer1", "officer")));
+    await assertSucceeds(getDocs(collection(as.kwame(), "incidents/s1/messages")));
+  });
+
+  it("other students can't read or write", async () => {
+    await assertFails(getDocs(collection(as.abena(), "incidents/s1/messages")));
+    await assertFails(addDoc(collection(as.abena(), "incidents/s1/messages"), message("abena", "student")));
+  });
+
+  it("can't impersonate someone or claim a different role", async () => {
+    await assertFails(addDoc(collection(as.kwame(), "incidents/s1/messages"), message("officer1", "officer")));
+    await assertFails(addDoc(collection(as.kwame(), "incidents/s1/messages"), message("kwame", "officer")));
+  });
+
+  it("needs text or a photo", async () => {
+    await assertFails(addDoc(collection(as.kwame(), "incidents/s1/messages"), message("kwame", "student", { text: "" })));
+    await assertSucceeds(
+      addDoc(collection(as.kwame(), "incidents/s1/messages"), message("kwame", "student", { text: "", imageUrl: "https://x/y.jpg" })),
+    );
+  });
+
+  it("can't be edited", async () => {
+    const ref = await addDoc(collection(as.kwame(), "incidents/s1/messages"), message("kwame", "student"));
+    await assertFails(updateDoc(doc(as.kwame(), ref.path), { text: "Changed" }));
+  });
+});
+
+describe("announcements", () => {
+  const post = (audience: string, createdBy = "admin1") => ({
+    title: "Night escort",
+    body: "Officers can walk you home after 10 pm.",
+    audience,
+    createdBy,
+    createdAt: serverTimestamp(),
+  });
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (context) => {
+      for (const audience of ["all", "students", "staff", "officers"]) {
+        await setDoc(doc(db(context), `announcements/${audience}`), { ...post(audience), createdAt: new Date() });
+      }
+    });
+  });
+
+  it("students read their own audiences only", async () => {
+    await assertSucceeds(
+      getDocs(query(collection(as.kwame(), "announcements"), where("audience", "in", ["all", "students"]))),
+    );
+    await assertFails(getDoc(doc(as.kwame(), "announcements/officers")));
+    await assertFails(getDocs(collection(as.kwame(), "announcements")));
+  });
+
+  it("officers read officer announcements", async () => {
+    await assertSucceeds(getDoc(doc(as.officer(), "announcements/officers")));
+    await assertFails(getDoc(doc(as.officer(), "announcements/students")));
+  });
+
+  it("only admins can post, in their own name", async () => {
+    await assertSucceeds(setDoc(doc(as.admin(), "announcements/new"), post("all")));
+    await assertFails(setDoc(doc(as.admin(), "announcements/new2"), post("all", "someone-else")));
+    await assertFails(setDoc(doc(as.officer(), "announcements/new3"), post("all", "officer1")));
+  });
+
+  it("rejects unknown audiences", async () => {
+    await assertFails(setDoc(doc(as.admin(), "announcements/new"), post("admins")));
+  });
+});

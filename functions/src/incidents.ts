@@ -11,7 +11,7 @@ import {
   StatusSnapshot,
   statusChangeEffects,
 } from "./incidentLogic";
-import { pushToUsers, recipientFrom } from "./notifications";
+import { onDutySecurity, pushToUsers, recipientFrom } from "./notifications";
 
 const SYSTEM_ACTOR = { actorId: "system", actorName: "System" };
 
@@ -24,11 +24,7 @@ export const onIncidentCreated = onDocumentCreated("incidents/{incidentId}", asy
   if (!snap) return;
   const db = getFirestore();
 
-  const officers = await db
-    .collection("users")
-    .where("role", "in", ["officer", "admin"])
-    .where("onDuty", "==", true)
-    .get();
+  const officers = await onDutySecurity();
 
   // In a transaction: the reporter may already have cancelled ("I'm safe").
   const incident = await db.runTransaction(async (tx) => {
@@ -48,18 +44,18 @@ export const onIncidentCreated = onDocumentCreated("incidents/{incidentId}", asy
     tx.set(events.doc(), {
       type: "alerted",
       ...SYSTEM_ACTOR,
-      text: alertedEventText(officers.size),
+      text: alertedEventText(officers.length),
       timestamp: FieldValue.serverTimestamp(),
     });
     return data;
   });
   if (!incident) return;
 
-  const sent = await pushToUsers(officers.docs.map(recipientFrom), officerAlert(incident), {
+  const sent = await pushToUsers(officers.map(recipientFrom), officerAlert(incident), {
     type: incident.kind,
     incidentId: event.params.incidentId,
   });
-  logger.info("Incident alerted", { incidentId: event.params.incidentId, officers: officers.size, pushesSent: sent });
+  logger.info("Incident alerted", { incidentId: event.params.incidentId, officers: officers.length, pushesSent: sent });
 });
 
 /**

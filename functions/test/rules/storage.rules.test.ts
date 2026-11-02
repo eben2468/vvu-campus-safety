@@ -89,6 +89,18 @@ describe("uploading incident photos", () => {
   });
 });
 
+describe("chat photos from officers", () => {
+  it("officers can upload tagged with the incident's reporter", async () => {
+    await assertSucceeds(uploadBytes(ref(as.officer(), path), jpeg, photo("kwame")));
+  });
+
+  it("which the reporter can then open", async () => {
+    await uploadBytes(ref(as.officer(), path), jpeg, photo("kwame"));
+    await assertSucceeds(getMetadata(ref(as.kwame(), path)));
+    await assertFails(getMetadata(ref(as.abena(), path)));
+  });
+});
+
 describe("viewing incident photos", () => {
   beforeEach(seedPhoto);
 

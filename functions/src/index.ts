@@ -14,3 +14,4 @@ initializeApp();
 
 export { verifyId } from "./verifyId";
 export { onIncidentCreated, onIncidentUpdated } from "./incidents";
+export { onAnnouncementCreated, onMessageCreated } from "./chat";
