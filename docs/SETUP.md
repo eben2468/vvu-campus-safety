@@ -106,6 +106,25 @@ firebase deploy --only firestore:rules,firestore:indexes,storage,functions,hosti
 flutter build apk --release   # share the APK for testing
 ```
 
+Daily backups (`scheduledBackup`, 02:00 Accra) export Firestore to
+`gs://<default bucket>/backups/YYYY-MM-DD`. Once, after the first functions
+deploy, give the Functions service account the export role:
+
+```bash
+gcloud projects add-iam-policy-binding vvu-campus-safety \
+  --member=serviceAccount:vvu-campus-safety@appspot.gserviceaccount.com \
+  --role=roles/datastore.importExportAdmin
+```
+
+The same account already writes to the default bucket. To restore, run
+`gcloud firestore import gs://<bucket>/backups/<date>`. Scheduled functions
+don't run in the emulator.
+
+Emergency-contact SMS uses `ConsoleSmsProvider` (logs only) until a gateway
+is chosen (DECISIONS O2). To add one, implement `SmsProvider` in
+`functions/src/sms/`, store its key with `firebase functions:secrets:set`,
+and return it from `getSmsProvider()`.
+
 ## 9. Data you need from VVU
 
 - ID roster CSV from Registry/HR: `idNumber,fullName,type,department`

@@ -48,6 +48,11 @@ Record of choices the proposal left open. Update this file when something change
 | D40 | Live board numbers | Summary cards are computed in the app from incidents raised in the last 7 days plus the open incidents. "Today" is the Accra (UTC) calendar day. "Resolved today" counts resolutions by security, not "I'm safe" cancellations, among incidents from the last 7 days. Average response uses `responseSeconds`. | No extra aggregation function; exact enough for a campus's volume. |
 | D41 | New-SOS alarm | The dashboard sounds three beeps (Web Audio, no sound file) and flashes a red banner on every page when an SOS that nobody has accepted appears after the page loaded. SOS alerts already open at load are listed but don't sound. The banner clears when the SOS is accepted, opened or dismissed. | PRD §4.8 audible/visual cue without a push on the web (D23). |
 | D42 | Incidents table and panel | The table shows the 300 most recent incidents, filtered in the app (open/closed, type, category, search). Any incident opens a side panel with details, the officer actions (admins can do all of them, D32) and the chat. Older incidents are for the analytics pages (Milestone 6). | Keeps the query to one simple index-free read. |
+| D43 | Heatmap drawing | The heatmap groups incident locations into ~50 m squares and draws a circle per square, larger and redder with more incidents (tap for the count). Google's JavaScript heatmap layer is deprecated and being retired, so it isn't used. | Works the same on web and Android, and the grouping is easy to explain and test. |
+| D44 | Analytics data | The page loads incidents raised in the chosen date range (whole Accra days, at most 5000) and applies the category filter in the app; SOS alerts are their own "SOS" category. Weeks run Monday–Sunday. The CSV export is exactly the filtered list, UTF-8 with a BOM for Excel, with spreadsheet formulas neutralised. | One range query with no composite index; the export matches what the charts show. |
+| D45 | Emergency contacts | Private to the user (not even officers can read them). On SOS, `onIncidentCreated` texts up to 5 valid +233 numbers with the user's name and a Google Maps link, after alerting officers; an SMS failure never affects the alert. Until a gateway is chosen (O2) `ConsoleSmsProvider` logs the messages. | PRD §4.10; privacy of family numbers. |
+| D46 | Settings changes | `settings/app` can no longer be written by clients; the settings page saves through `adminUpdateSettings`, which validates every field and logs which fields changed. Boundary and zones are edited as text, one point or zone per line. | Keeps the audit log complete; text editing avoids a map-drawing tool for the MVP. |
+| D47 | Backups | `scheduledBackup` exports the whole database daily at 02:00 Accra time to `backups/YYYY-MM-DD` in the default bucket, retrying twice. | PRD §4.12. |
 
 ## Open — need an answer
 
@@ -69,3 +74,4 @@ Record of choices the proposal left open. Update this file when something change
 - 2026-11-02 — Milestone 3 reports: added D29–D31.
 - 2026-11-02 — Milestone 4 response, chat, announcements: added D32–D36.
 - 2026-11-02 — Milestone 5 admin dashboard: added D37–D42.
+- 2026-11-02 — Milestone 6 analytics and extras: added D43–D47.

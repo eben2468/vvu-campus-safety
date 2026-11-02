@@ -81,13 +81,13 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 
 ## Milestone 6 — Analytics and extras (Week 7)
 
-- [ ] Heatmap of incidents with date-range + category filters
-- [ ] Charts: per category, per week, response-time trend (`fl_chart`)
-- [ ] CSV export of filtered incidents
-- [ ] Emergency contacts CRUD + SMS on SOS (via `SmsProvider`)
-- [ ] Settings page (categories, phone, countdown, boundary/zones)
-- [ ] Audit log page
-- [ ] `scheduledBackup` function
+- [x] Heatmap of incidents with date-range + category filters
+- [x] Charts: per category, per week, response-time trend (`fl_chart`)
+- [x] CSV export of filtered incidents
+- [x] Emergency contacts CRUD + SMS on SOS (via `SmsProvider`)
+- [x] Settings page (categories, phone, countdown, boundary/zones)
+- [x] Audit log page
+- [x] `scheduledBackup` function (runs only once deployed; IAM step in SETUP §8)
 
 **Demo:** heatmap shows clusters from seeded historical incidents.
 

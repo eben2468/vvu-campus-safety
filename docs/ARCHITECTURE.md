@@ -60,7 +60,7 @@ Admin-only read/write (via dashboard import). Clients never read it directly —
 | deactivated | bool | |
 | createdAt | timestamp | |
 
-Subcollection `users/{uid}/contacts/{contactId}`: `name`, `phone`, `relationship`, `createdAt`. Max 5 (enforced in app + function).
+Subcollection `users/{uid}/contacts/{contactId}`: `name`, `phone` (+233…), `relationship`, `createdAt`. Owner-only in rules. Max 5: enforced in the app; `onIncidentCreated` texts at most 5.
 
 ### `incidents/{incidentId}`
 | Field | Type | Notes |
@@ -143,6 +143,7 @@ Every transition: update `status` (+ timestamps), write an `events` doc, notify 
 | `adminCreateUser` | callable (admin) | Create officer/admin account, set claims, audit log. |
 | `adminSetRole` | callable (admin) | Change role / deactivate (also `auth.updateUser({disabled})`), audit log. |
 | `adminImportRoster` | callable (admin) | Accept parsed CSV rows (≤ 5000 per call), batch-write `idRoster`, audit log. |
+| `adminUpdateSettings` | callable (admin) | Validate and save `settings/app` (clients cannot write it), audit log `settings_updated` with the changed fields. |
 | `scheduledBackup` | scheduled (daily 02:00 Africa/Accra) | Firestore export to `gs://<bucket>/backups/YYYY-MM-DD`. |
 
 SMS: `functions/src/sms/SmsProvider.ts` interface `send(to: string, text: string)`; `ConsoleSmsProvider` for dev; real provider added once chosen. API key via `defineSecret`.
@@ -203,7 +204,7 @@ service cloud.firestore {
 
     match /announcements/{a} { allow read: if signedIn(); allow write: if isAdmin(); }
     match /auditLogs/{a} { allow read: if isAdmin(); allow write: if false; }
-    match /settings/{s} { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /settings/{s} { allow read: if signedIn(); allow write: if false; }  // via adminUpdateSettings
   }
 }
 ```
@@ -251,7 +252,7 @@ lib/
     auth/{data,presentation}/...
     sos/...  incidents/...  officer/...  contacts/...
     notifications/...  profile/...
-    admin/{shell,live_board,incidents,users,roster,announcements}/...   (analytics, reports, settings: Milestone 6)
+    admin/{shell,live_board,incidents,analytics,users,roster,announcements,settings,audit}/...
 test/
   models/  features/  (unit + widget tests)
 functions/
