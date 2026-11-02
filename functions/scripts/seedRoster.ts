@@ -1,6 +1,7 @@
 /**
- * Loads a sample ID roster and the default `settings/app` document into the
- * local Firestore emulator. Run from /functions with the emulators started:
+ * Loads a sample ID roster, the default `settings/app` document and test
+ * admin/officer logins into the local emulators. Run from /functions with
+ * the emulators started:
  *
  *   npm run seed
  *
@@ -9,9 +10,11 @@
  * until the real boundary is traced (DECISIONS.md O4).
  */
 import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { FieldValue, GeoPoint, getFirestore } from "firebase-admin/firestore";
 
 process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
+process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
 const PROJECT_ID = "demo-vvu-campus-safety";
 
 const roster = [
@@ -44,6 +47,35 @@ const settings = {
   ],
 };
 
+// Emulator-only test logins (officers and admins are never self-registered).
+const PASSWORD = "password123";
+const staffAccounts = [
+  { email: "admin@vvu.test", fullName: "Test Admin", role: "admin", phone: "+233200000001" },
+  { email: "officer@vvu.test", fullName: "Test Officer", role: "officer", phone: "+233200000002" },
+];
+
+/** Creates (or updates) an emulator Auth user with claims and a users doc. */
+async function seedStaffAccount(account: (typeof staffAccounts)[number]): Promise<void> {
+  const auth = getAuth();
+  const user = await auth.getUserByEmail(account.email).catch(() =>
+    auth.createUser({ email: account.email, password: PASSWORD, emailVerified: true, displayName: account.fullName }),
+  );
+  await auth.setCustomUserClaims(user.uid, { role: account.role, verified: true });
+  await getFirestore().collection("users").doc(user.uid).set({
+    fullName: account.fullName,
+    idNumber: null,
+    email: account.email,
+    phone: account.phone,
+    role: account.role,
+    verified: true,
+    onDuty: false,
+    fcmTokens: [],
+    falseAlarmCount: 0,
+    deactivated: false,
+    createdAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+}
+
 async function main(): Promise<void> {
   initializeApp({ projectId: PROJECT_ID });
   const db = getFirestore();
@@ -60,7 +92,11 @@ async function main(): Promise<void> {
   batch.set(db.collection("settings").doc("app"), settings);
 
   await batch.commit();
+  for (const account of staffAccounts) {
+    await seedStaffAccount(account);
+  }
   console.log(`Seeded ${roster.length} roster entries and settings/app into ${process.env.FIRESTORE_EMULATOR_HOST}.`);
+  console.log(`Test logins (password ${PASSWORD}): ${staffAccounts.map((a) => `${a.email} (${a.role})`).join(", ")}`);
 }
 
 main().catch((error) => {
