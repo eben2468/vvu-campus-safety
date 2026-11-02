@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -31,7 +30,10 @@ class _ChatInputState extends State<ChatInput> {
 
   Future<void> _pickPhoto() async {
     try {
-      final file = await ImagePicker().pickImage(source: ImageSource.camera);
+      // The dashboard (web) picks a file; phones open the camera.
+      final file = await ImagePicker().pickImage(
+        source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
+      );
       if (file == null) return;
       final bytes = await PhotoRepository.compress(await file.readAsBytes());
       setState(() => _photo = bytes);

@@ -109,6 +109,21 @@ void main() {
         );
       }
     });
+
+    test('admins can open every dashboard page; officers cannot', () {
+      for (final page in [
+        Routes.dashboardIncidents,
+        Routes.dashboardUsers,
+        Routes.dashboardRoster,
+        Routes.dashboardAnnouncements,
+      ]) {
+        expect(redirectFor(active(UserRole.admin), page, isWeb: true), isNull);
+        expect(
+          redirectFor(active(UserRole.officer), page, isWeb: true),
+          Routes.useMobileApp,
+        );
+      }
+    });
   });
 
   group('TokenClaims.canUseApp', () {

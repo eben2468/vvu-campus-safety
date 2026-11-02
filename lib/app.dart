@@ -46,6 +46,18 @@ class _AppState extends ConsumerState<App> {
       }
     });
 
+    // adminSetRole sets the new claim, then updates `users.role`. When the
+    // profile's role stops matching the token, fetch a fresh token so the
+    // new role (and home screen) applies straight away.
+    ref.listen(sessionProvider, (_, next) {
+      final profileRole = next.profile?.role;
+      if (next.status == SessionStatus.active &&
+          profileRole != null &&
+          profileRole != next.role) {
+        ref.read(authRepositoryProvider).refreshUser().ignore();
+      }
+    });
+
     return MaterialApp.router(
       title: 'VVU Campus Safety',
       debugShowCheckedModeBanner: false,

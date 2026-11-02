@@ -1,8 +1,14 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/admin/announcements/presentation/admin_announcements_screen.dart';
+import '../features/admin/incidents/presentation/incidents_screen.dart';
 import '../features/admin/live_board/presentation/live_board_screen.dart';
+import '../features/admin/roster/presentation/roster_import_screen.dart';
+import '../features/admin/shell/admin_shell.dart';
+import '../features/admin/users/presentation/users_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/permissions_screen.dart';
@@ -82,9 +88,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) =>
             ChatScreen(incidentId: state.pathParameters['incidentId']!),
       ),
-      GoRoute(
-        path: Routes.dashboard,
-        builder: (_, _) => const LiveBoardScreen(),
+      // Admin dashboard (web): every page shares the side navigation.
+      ShellRoute(
+        builder: (_, state, child) =>
+            AdminShell(location: state.matchedLocation, child: child),
+        routes: [
+          _dashboardPage(Routes.dashboard, const LiveBoardScreen()),
+          _dashboardPage(Routes.dashboardIncidents, const IncidentsScreen()),
+          _dashboardPage(Routes.dashboardUsers, const UsersScreen()),
+          _dashboardPage(Routes.dashboardRoster, const RosterImportScreen()),
+          _dashboardPage(
+            Routes.dashboardAnnouncements,
+            const AdminAnnouncementsScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: Routes.useMobileApp,
@@ -99,3 +116,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   });
   return router;
 });
+
+/// Dashboard pages switch without an animation, like tabs.
+GoRoute _dashboardPage(String path, Widget page) => GoRoute(
+  path: path,
+  pageBuilder: (_, state) => NoTransitionPage(key: state.pageKey, child: page),
+);

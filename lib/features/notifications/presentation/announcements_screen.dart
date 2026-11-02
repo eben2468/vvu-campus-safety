@@ -43,6 +43,7 @@ class AnnouncementCard extends StatelessWidget {
     super.key,
     required this.announcement,
     this.maxLines,
+    this.showAudience = false,
   });
 
   final Announcement announcement;
@@ -50,10 +51,17 @@ class AnnouncementCard extends StatelessWidget {
   /// Clamp the body (e.g. on the home screen); null shows it all.
   final int? maxLines;
 
+  /// Adds who it was sent to after the date (the admin's list).
+  final bool showAudience;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final createdAt = announcement.createdAt;
+    final details = [
+      if (createdAt != null) formatDateTime(createdAt),
+      if (showAudience) 'Sent to ${announcement.audience.name}',
+    ].join(' · ');
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -69,13 +77,10 @@ class AnnouncementCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (createdAt != null)
+            if (details.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  formatDateTime(createdAt),
-                  style: textTheme.bodySmall,
-                ),
+                child: Text(details, style: textTheme.bodySmall),
               ),
             const SizedBox(height: 8),
             Text(

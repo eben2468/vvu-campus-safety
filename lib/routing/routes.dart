@@ -19,6 +19,13 @@ abstract final class Routes {
   static const dashboard = '/dashboard'; // admin (web)
   static const useMobileApp = '/use-mobile-app'; // non-admins on web
 
+  // Admin dashboard pages (web), all under /dashboard. The dashboard
+  // itself is the live board.
+  static const dashboardIncidents = '/dashboard/incidents';
+  static const dashboardUsers = '/dashboard/users';
+  static const dashboardRoster = '/dashboard/roster';
+  static const dashboardAnnouncements = '/dashboard/announcements';
+
   // Member pages (under /home so the role redirect allows them)
   static const report = '/home/report';
   static const myReports = '/home/reports';

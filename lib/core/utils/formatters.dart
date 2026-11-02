@@ -32,3 +32,18 @@ String timeAgo(DateTime time, {DateTime? now}) {
   if (elapsed.inDays < 1) return '${elapsed.inHours} h ago';
   return formatDateTime(time);
 }
+
+/// A response time such as "45 s", "3 min 20 s" or "1 h 5 min".
+String formatDuration(Duration duration) {
+  final seconds = duration.inSeconds;
+  if (seconds < 60) return '$seconds s';
+  final minutes = duration.inMinutes;
+  if (minutes < 60) {
+    final rest = seconds % 60;
+    return rest == 0 ? '$minutes min' : '$minutes min $rest s';
+  }
+  final rest = minutes % 60;
+  return rest == 0
+      ? '${duration.inHours} h'
+      : '${duration.inHours} h $rest min';
+}
