@@ -87,7 +87,7 @@ Subcollection `users/{uid}/contacts/{contactId}`: `name`, `phone`, `relationship
 Subcollections:
 - `locations/{autoId}`: `point` (geopoint), `accuracy` (number, m), `timestamp`. Written by reporter device during active SOS only.
 - `events/{autoId}`: `type` (`created|alerted|accepted|assigned|on_scene|note|resolved|false_alarm|cancelled`), `actorId`, `actorName`, `text`, `timestamp`. `created` and `alerted` are written by `onIncidentCreated` (`actorId: system` for alerted); clients write only their own actions.
-- `messages/{autoId}`: `senderId`, `senderName`, `senderRole`, `text`, `imageUrl?`, `timestamp`.
+- `messages/{autoId}`: `senderId`, `senderName`, `senderRole`, `text`, `imageUrl?`, `timestamp`. Chat photos are stored at `incidents/{id}/chat_{messageId}.jpg` (D35).
 
 ### `announcements/{id}`
 `title`, `body`, `audience` (`all|students|staff|officers`), `createdBy`, `createdAt`.
@@ -105,6 +105,7 @@ Default categories: `Theft`, `Assault`, `Harassment`, `Medical`, `Fire`, `Accide
 - `incidents`: `reporterId ASC, createdAt DESC`
 - `incidents`: `category ASC, createdAt DESC`
 - `incidents`: `assignedTo ARRAY_CONTAINS, createdAt DESC`
+- `announcements`: `audience ASC, createdAt DESC` (each user's announcement list)
 - `users`: `role ASC, onDuty ASC` (on-duty officer lookup in `onIncidentCreated`)
 
 ## 4. Incident state machine

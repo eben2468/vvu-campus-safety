@@ -37,6 +37,11 @@ Record of choices the proposal left open. Update this file when something change
 | D29 | Photo access | Each photo carries custom metadata `reporterId`; `storage.rules` lets that user and officers read it, with no Firestore lookup. `mediaUrls` stores Firebase download URLs, which are only visible to people who can already read the incident. Uploads are create-only (no overwrite or delete), images only, < 2 MB. | ARCHITECTURE §6 offered this option; it keeps Storage rules simple and evidence tamper-proof. |
 | D30 | Report submission order | The app picks the incident id, uploads the compressed photos under `incidents/{id}/`, then writes the incident. Photo upload needs a connection (clear error if not); the document write itself queues offline like SOS. | Photos are optional; a report with photos must not point at files that don't exist. |
 | D31 | "My reports" | Lists all the user's incidents, SOS alerts included, newest first. Report descriptions must be 10–1000 characters, enforced in the form and in `firestore.rules`. | One place to follow up on anything you raised. |
+| D32 | Who may change status | On scene and resolve: officers in `assignedTo`, or any admin. False alarm: anyone on the security team. Assign adds to `assignedTo` and never removes. Closed incidents can't be edited by clients. Enforced in `firestore.rules` and mirrored by `IncidentRepository.canActOn`. | ARCHITECTURE §4 says "assigned officer/admin" for on scene and resolve. |
+| D33 | Chat access | Any officer/admin and the reporter can read and write an incident's chat (not only the assigned officers), so a colleague can step in. Messages are permanent, in the sender's own name and role, text ≤ 2000 characters or a photo. | Simple, matches the ARCHITECTURE rules outline. |
+| D34 | Chat pushes | A reporter's message goes to the assigned officers, or to everyone on duty if nobody is assigned yet. Security's message goes to the reporter. | Someone always hears the reporter. |
+| D35 | Chat photos | Stored beside the incident's photos as `incidents/{id}/chat_{messageId}.jpg`, tagged with the incident's `reporterId`; officers may upload them (storage.rules). | Reuses one Storage rule so the reporter and officers can both open them. |
+| D36 | Announcements | Users read only their own audiences (`all` + their group; admins everything), enforced in rules, so the app queries with `audience in [...]`. Pushed to the matching FCM topic on a separate, less urgent `announcements` Android channel. Chat and announcements use shared routes (`/chat/:id`, `/announcements`) open to every signed-in phone user; data access is still decided by the rules. | Matches the four topics devices already subscribe to. |
 
 ## Open — need an answer
 
@@ -56,3 +61,4 @@ Record of choices the proposal left open. Update this file when something change
 - 2026-11-02 — Milestone 1 auth: added D18–D22.
 - 2026-11-02 — Milestone 2 SOS: added D23–D28.
 - 2026-11-02 — Milestone 3 reports: added D29–D31.
+- 2026-11-02 — Milestone 4 response, chat, announcements: added D32–D36.

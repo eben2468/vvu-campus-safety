@@ -59,11 +59,11 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 
 ## Milestone 4 — Response workflow, chat, announcements (Week 5)
 
-- [ ] Officer actions: assign, on scene, add note, resolve, false alarm (with transition checks)
-- [ ] Per-incident chat (text + optional photo) for reporter and officers
-- [ ] `onMessageCreated` push
-- [ ] Call security button
-- [ ] Announcements list in app; `onAnnouncementCreated` topic push
+- [x] Officer actions: assign, on scene, add note, resolve, false alarm (with transition checks)
+- [x] Per-incident chat (text + optional photo) for reporter and officers
+- [x] `onMessageCreated` push
+- [x] Call security button
+- [x] Announcements list in app; `onAnnouncementCreated` topic push
 
 **Demo:** full lifecycle new → resolved with chat on both phones.
 
