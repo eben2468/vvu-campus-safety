@@ -40,11 +40,30 @@ service cloud.firestore {
         && resource.data.deactivated != true
         && ownProfileUpdateAllowed();
       allow create, delete: if false; // created by verifyId / adminCreateUser
+
+      // Emergency contacts (PRD §4.10): private to the user. The SOS trigger
+      // reads them with the Admin SDK. The app keeps the list to 5 and the
+      // function texts at most 5.
+      match /contacts/{contactId} {
+        function validContact() {
+          let data = request.resource.data;
+          return data.keys().hasOnly(['name', 'phone', 'relationship', 'createdAt'])
+            && data.name is string && data.name.size() > 0 && data.name.size() <= 60
+            && data.phone is string && data.phone.matches('^[+]233[0-9]{9}$')
+            && data.relationship is string && data.relationship.size() <= 40;
+        }
+        allow read, delete: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn() && request.auth.uid == uid && notDeactivated()
+          && validContact() && request.resource.data.createdAt == request.time;
+        allow update: if signedIn() && request.auth.uid == uid && notDeactivated()
+          && validContact() && request.resource.data.createdAt == resource.data.createdAt;
+      }
     }
 
+    // Changed only through adminUpdateSettings, which writes the audit log.
     match /settings/{doc} {
       allow read: if signedIn();
-      allow write: if isAdmin();
+      allow write: if false;
     }
 
     // ---- Incidents -------------------------------------------------------

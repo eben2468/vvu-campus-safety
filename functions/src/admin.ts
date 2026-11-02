@@ -1,5 +1,5 @@
 import { getAuth } from "firebase-admin/auth";
-import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { FieldValue, GeoPoint, getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import { CallableRequest, HttpsError, onCall } from "firebase-functions/v2/https";
 
@@ -11,6 +11,7 @@ import {
   parseSetRoleInput,
   setRoleAuditEntries,
 } from "./adminLogic";
+import { changedSettings, LatLng, parseSettingsInput } from "./settingsLogic";
 
 /**
  * Admin-only callables used by the web dashboard (docs/ARCHITECTURE.md §5).
@@ -163,4 +164,38 @@ export const adminImportRoster = onCall(async (request) => {
   logger.info("Roster imported", { imported: valid.length, rejected: rejected.length, by: actorId });
   // Enough detail for the admin to fix the file without a huge response.
   return { imported: valid.length, rejectedCount: rejected.length, rejected: rejected.slice(0, 100) };
+});
+
+/**
+ * Saves `settings/app` from the dashboard's settings page. Rules don't let
+ * clients write settings directly, so every change is audited.
+ */
+export const adminUpdateSettings = onCall(async (request) => {
+  const actorId = requireAdmin(request);
+  const parsed = parseSettingsInput(request.data);
+  if (!parsed.ok) throw new HttpsError("invalid-argument", parsed.message);
+  const input = parsed.value;
+
+  const db = getFirestore();
+  const ref = db.collection("settings").doc("app");
+  const changed = changedSettings((await ref.get()).data(), input);
+  if (changed.length === 0) return { changed: [] };
+
+  const point = (p: LatLng) => new GeoPoint(p.lat, p.lng);
+  const batch = db.batch();
+  batch.set(ref, {
+    categories: input.categories,
+    securityPhone: input.securityPhone,
+    sosCountdownSec: input.sosCountdownSec,
+    campusBoundary: input.campusBoundary.map(point),
+    zones: input.zones.map((z) => ({ name: z.name, center: point(z.center), radiusM: z.radiusM })),
+  });
+  batch.set(
+    db.collection("auditLogs").doc(),
+    audit({ actorId, action: "settings_updated", target: "settings/app", details: { fields: changed } }),
+  );
+  await batch.commit();
+
+  logger.info("Settings updated", { fields: changed, by: actorId });
+  return { changed };
 });

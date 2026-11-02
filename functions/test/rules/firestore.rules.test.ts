@@ -13,7 +13,7 @@ import {
   RulesTestContext,
   RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { deleteDoc, doc, Firestore, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, Firestore, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 
 let env: RulesTestEnvironment;
 
@@ -154,5 +154,32 @@ describe("other collections", () => {
   it("stay locked until their milestone", async () => {
     await assertFails(getDoc(doc(as.officer(), "announcements/any")));
     await assertFails(setDoc(doc(as.kwame(), "incidents/any"), { status: "new" }));
+  });
+});
+
+describe("emergency contacts", () => {
+  const contact = { name: "Ama Mensah", phone: "+233201234567", relationship: "Mother", createdAt: serverTimestamp() };
+
+  it("the owner can add, edit, read and remove them", async () => {
+    await assertSucceeds(setDoc(doc(as.kwame(), "users/kwame/contacts/c1"), contact));
+    await assertSucceeds(updateDoc(doc(as.kwame(), "users/kwame/contacts/c1"), { relationship: "Mum" }));
+    await assertSucceeds(getDoc(doc(as.kwame(), "users/kwame/contacts/c1")));
+    await assertSucceeds(deleteDoc(doc(as.kwame(), "users/kwame/contacts/c1")));
+  });
+
+  it("are private, even from officers", async () => {
+    await assertFails(getDoc(doc(as.abena(), "users/kwame/contacts/c1")));
+    await assertFails(getDoc(doc(as.officer(), "users/kwame/contacts/c1")));
+    await assertFails(setDoc(doc(as.abena(), "users/kwame/contacts/c2"), contact));
+  });
+
+  it("need a Ghana phone number and no extra fields", async () => {
+    await assertFails(setDoc(doc(as.kwame(), "users/kwame/contacts/c3"), { ...contact, phone: "0201234567" }));
+    await assertFails(setDoc(doc(as.kwame(), "users/kwame/contacts/c4"), { ...contact, notes: "x" }));
+    await assertFails(setDoc(doc(as.kwame(), "users/kwame/contacts/c5"), { ...contact, name: "" }));
+  });
+
+  it("can't be added by a deactivated user", async () => {
+    await assertFails(setDoc(doc(db(env.authenticatedContext("gone", student)), "users/gone/contacts/c1"), contact));
   });
 });

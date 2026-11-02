@@ -137,7 +137,13 @@ export function chunk<T>(items: T[], size: number): T[][] {
 /** Fields of an `auditLogs` document, minus the server timestamp. */
 export interface AuditEntry {
   actorId: string;
-  action: "user_created" | "role_changed" | "user_deactivated" | "user_reactivated" | "roster_imported";
+  action:
+    | "user_created"
+    | "role_changed"
+    | "user_deactivated"
+    | "user_reactivated"
+    | "roster_imported"
+    | "settings_updated";
   target: string;
   details: Record<string, unknown>;
 }

@@ -332,9 +332,9 @@ describe("settings", () => {
     await assertSucceeds(getDoc(doc(as.kwame(), "settings/app")));
   });
 
-  it("can only be changed by admins", async () => {
+  it("can only be changed through adminUpdateSettings", async () => {
     await assertFails(updateDoc(doc(as.officer(), "settings/app"), { securityPhone: "+233111111111" }));
-    await assertSucceeds(updateDoc(doc(as.admin(), "settings/app"), { securityPhone: "+233111111111" }));
+    await assertFails(updateDoc(doc(as.admin(), "settings/app"), { securityPhone: "+233111111111" }));
   });
 });
 

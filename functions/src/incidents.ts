@@ -12,6 +12,8 @@ import {
   statusChangeEffects,
 } from "./incidentLogic";
 import { onDutySecurity, pushToUsers, recipientFrom } from "./notifications";
+import { getSmsProvider } from "./sms";
+import { contactNumbers, Point, sosSmsText } from "./sms/messages";
 
 const SYSTEM_ACTOR = { actorId: "system", actorName: "System" };
 
@@ -56,7 +58,30 @@ export const onIncidentCreated = onDocumentCreated("incidents/{incidentId}", asy
     incidentId: event.params.incidentId,
   });
   logger.info("Incident alerted", { incidentId: event.params.incidentId, officers: officers.length, pushesSent: sent });
+
+  if (incident.kind === "sos") {
+    await textEmergencyContacts(incident, event.params.incidentId);
+  }
 });
+
+/**
+ * SMS the reporter's emergency contacts with a map link (PRD §4.10).
+ * Never throws: a failed SMS must not affect the alert itself.
+ */
+async function textEmergencyContacts(incident: IncidentDoc & { location?: Point | null }, incidentId: string) {
+  try {
+    const contacts = await getFirestore().collection("users").doc(incident.reporterId).collection("contacts").get();
+    const numbers = contactNumbers(contacts.docs.map((d) => d.data()));
+    if (numbers.length === 0) return;
+    const text = sosSmsText(incident.reporterName, incident.location);
+    const sms = getSmsProvider();
+    const results = await Promise.allSettled(numbers.map((to) => sms.send(to, text)));
+    const failed = results.filter((r) => r.status === "rejected").length;
+    logger.info("Emergency contacts texted", { incidentId, sent: numbers.length - failed, failed });
+  } catch (error) {
+    logger.warn("Emergency contact SMS failed", { incidentId, error: String(error) });
+  }
+}
 
 /**
  * Status change: record `responseSeconds`, close the incident (`active`,

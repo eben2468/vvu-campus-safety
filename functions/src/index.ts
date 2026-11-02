@@ -15,4 +15,5 @@ initializeApp();
 export { verifyId } from "./verifyId";
 export { onIncidentCreated, onIncidentUpdated } from "./incidents";
 export { onAnnouncementCreated, onMessageCreated } from "./chat";
-export { adminCreateUser, adminImportRoster, adminSetRole } from "./admin";
+export { adminCreateUser, adminImportRoster, adminSetRole, adminUpdateSettings } from "./admin";
+export { scheduledBackup } from "./backup";
