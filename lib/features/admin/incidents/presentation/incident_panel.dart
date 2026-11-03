@@ -49,59 +49,53 @@ class IncidentPanel extends ConsumerWidget {
         height: double.infinity,
         child: DefaultTabController(
           length: 2,
-          child: Column(
-            children: [
-              AppBar(
-                automaticallyImplyLeading: false,
-                title: Text(
-                  loaded == null
-                      ? 'Incident'
-                      : loaded.isSos
-                      ? 'SOS — ${loaded.reporterName}'
-                      : '${loaded.category} — ${loaded.reporterName}',
-                  style: TextStyle(
-                    color: loaded?.isSos == true ? AppColors.sosRed : null,
-                  ),
+          // A Scaffold gives the AppBar its fixed height; directly inside a
+          // Column it gets unbounded height and the panel fails to lay out.
+          child: Scaffold(
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: Text(
+                loaded == null
+                    ? 'Incident'
+                    : loaded.isSos
+                    ? 'SOS — ${loaded.reporterName}'
+                    : '${loaded.category} — ${loaded.reporterName}',
+                style: TextStyle(
+                  color: loaded?.isSos == true ? AppColors.sosRed : null,
                 ),
-                actions: [
-                  if (loaded != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: StatusChip(loaded.status),
-                    ),
-                  IconButton(
-                    tooltip: 'Close',
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
+              ),
+              actions: [
+                if (loaded != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: StatusChip(loaded.status),
                   ),
+                IconButton(
+                  tooltip: 'Close',
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+              bottom: const TabBar(
+                tabs: [
+                  Tab(text: 'Details'),
+                  Tab(text: 'Chat'),
                 ],
-                bottom: const TabBar(
-                  tabs: [
-                    Tab(text: 'Details'),
-                    Tab(text: 'Chat'),
-                  ],
-                ),
               ),
-              Expanded(
-                child: incident.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (_, _) => const Center(
-                    child: Text('Could not load this incident.'),
-                  ),
-                  data: (incident) => incident == null
-                      ? const Center(
-                          child: Text('This incident no longer exists.'),
-                        )
-                      : TabBarView(
-                          children: [
-                            IncidentDetails(incident: incident),
-                            ChatView(incidentId: incident.id),
-                          ],
-                        ),
-                ),
-              ),
-            ],
+            ),
+            body: incident.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, _) =>
+                  const Center(child: Text('Could not load this incident.')),
+              data: (incident) => incident == null
+                  ? const Center(child: Text('This incident no longer exists.'))
+                  : TabBarView(
+                      children: [
+                        IncidentDetails(incident: incident),
+                        ChatView(incidentId: incident.id),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),
