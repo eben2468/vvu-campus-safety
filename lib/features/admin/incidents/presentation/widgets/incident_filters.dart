@@ -24,17 +24,17 @@ class IncidentFilters extends ConsumerWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         SizedBox(
-          width: 280,
+          width: 300,
           child: TextField(
             decoration: const InputDecoration(
               prefixIcon: Icon(Icons.search),
               hintText: 'Search reporter, place or status',
-              isDense: true,
             ),
             onChanged: (text) => set(filter.copyWith(search: text)),
           ),
         ),
         SegmentedButton<StatusFilter>(
+          showSelectedIcon: false,
           segments: [
             for (final s in StatusFilter.values)
               ButtonSegment(value: s, label: Text(s.label)),
@@ -43,7 +43,8 @@ class IncidentFilters extends ConsumerWidget {
           onSelectionChanged: (s) => set(filter.copyWith(status: s.single)),
         ),
         DropdownMenu<IncidentKind?>(
-          label: const Text('Type'),
+          width: 230,
+          leadingIcon: const Icon(Icons.filter_list),
           initialSelection: filter.kind,
           onSelected: (kind) => set(filter.copyWith(kind: () => kind)),
           dropdownMenuEntries: const [
@@ -56,7 +57,8 @@ class IncidentFilters extends ConsumerWidget {
           ],
         ),
         DropdownMenu<String?>(
-          label: const Text('Category'),
+          width: 220,
+          leadingIcon: const Icon(Icons.category_outlined),
           initialSelection: filter.category,
           onSelected: (category) =>
               set(filter.copyWith(category: () => category)),

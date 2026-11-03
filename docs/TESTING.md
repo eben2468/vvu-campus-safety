@@ -10,6 +10,7 @@ Run these before every test session and before each deploy.
 | Suite | Command | What it covers |
 | --- | --- | --- |
 | Flutter unit and widget tests | `flutter test` | Models and their Firestore maps, the incident state machine, validators and phone/ID normalisation, routing by role, dashboard statistics, the CSV export and parsers, colour contrast. Widget tests for registration, the SOS countdown and the report form, plus 200% text on the SOS screens. |
+| Dashboard pages | `flutter test test/features/admin/dashboard_pages_test.dart` (part of `flutter test`) | Every dashboard page opens without errors or layout overflows at 1440×900 and 1024×700, with sample data and empty. With `SCREENSHOT_DIR` set, `dashboard_screenshots_test.dart` also saves a PNG of each page. |
 | Static analysis | `flutter analyze` | Lints from `analysis_options.yaml`. |
 | Cloud Functions unit tests | `cd functions && npm test` | ID verification, incident triggers, chat and announcement pushes, admin input checks, settings, SMS text, backup paths. |
 | Security rules tests | `cd functions && npm run test:rules` | Every collection: who can read and write users, contacts, the roster, incidents (with locations, events and chat), announcements, settings and the audit log, and the photo rules in Storage. Includes "a student cannot read another student's incident". |

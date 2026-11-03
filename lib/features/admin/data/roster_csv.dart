@@ -41,6 +41,39 @@ class RosterCsv {
   final List<String> errors;
 }
 
+/// A template the admin can download, fill in (e.g. in Excel) and import.
+/// The names and IDs are made up.
+const sampleRosterCsv = '''
+idNumber,fullName,type,department,active
+225IT0100101,Ama Owusu,student,Information Technology,true
+225NU0200102,Kofi Boateng,student,Nursing,true
+224BA0300103,"Mensah, Adwoa",student,Business Administration,true
+223TH0400104,Yaw Asante,student,Theology,false
+STF00201,Esi Appiah,staff,Registry,true
+STF00202,Kwabena Darko,staff,Finance,true
+''';
+
+/// The columns of a roster file, for the guide on the import page.
+const rosterColumns = [
+  (
+    name: 'idNumber',
+    required: true,
+    help: 'VVU ID, e.g. 225IT0100101 or STF00201',
+  ),
+  (
+    name: 'fullName',
+    required: true,
+    help: 'As on the ID card. Quote names with commas',
+  ),
+  (name: 'type', required: true, help: 'student or staff'),
+  (name: 'department', required: false, help: 'Faculty, department or office'),
+  (
+    name: 'active',
+    required: false,
+    help: 'false blocks the ID; empty means true',
+  ),
+];
+
 /// Parses a roster CSV with the columns `idNumber,fullName,type,department`
 /// and an optional fifth `active` column (`true`/`false`, default true).
 ///

@@ -6,6 +6,7 @@ import '../../../../core/errors/app_exception.dart';
 import '../../../auth/presentation/widgets/auth_scaffold.dart';
 import '../../../auth/providers.dart';
 import '../../../notifications/providers.dart';
+import '../../widgets/section_card.dart';
 
 /// Form to post an announcement; it is pushed to the chosen audience.
 class AnnouncementComposer extends ConsumerStatefulWidget {
@@ -78,55 +79,52 @@ class _AnnouncementComposerState extends ConsumerState<AnnouncementComposer> {
     String? required(String? value, String what) =>
         (value ?? '').trim().isEmpty ? 'Write a $what.' : null;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _form,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'New announcement',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (_error != null) FormMessage(_error!),
-              TextFormField(
-                controller: _title,
-                maxLength: 120,
-                decoration: const InputDecoration(labelText: 'Title'),
-                textCapitalization: TextCapitalization.sentences,
-                validator: (v) => required(v, 'title'),
-              ),
-              TextFormField(
-                controller: _body,
-                maxLength: 2000,
-                minLines: 4,
-                maxLines: 10,
-                decoration: const InputDecoration(labelText: 'Message'),
-                textCapitalization: TextCapitalization.sentences,
-                validator: (v) => required(v, 'message'),
-              ),
-              const SizedBox(height: 8),
-              Text('Send to', style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 4),
-              SegmentedButton<AnnouncementAudience>(
-                segments: [
-                  for (final a in AnnouncementAudience.values)
-                    ButtonSegment(value: a, label: Text(_audienceLabels[a]!)),
-                ],
-                selected: {_audience},
-                onSelectionChanged: (s) => setState(() => _audience = s.single),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: _busy ? null : _post,
-                icon: const Icon(Icons.send),
-                label: Text(_busy ? 'Sending…' : 'Send announcement'),
-              ),
-            ],
-          ),
+    return SectionCard(
+      title: 'New announcement',
+      subtitle: 'Keep it short and say what people should do',
+      icon: Icons.edit_note,
+      child: Form(
+        key: _form,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_error != null) FormMessage(_error!),
+            TextFormField(
+              controller: _title,
+              maxLength: 120,
+              decoration: const InputDecoration(labelText: 'Title'),
+              textCapitalization: TextCapitalization.sentences,
+              validator: (v) => required(v, 'title'),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _body,
+              maxLength: 2000,
+              minLines: 4,
+              maxLines: 10,
+              decoration: const InputDecoration(labelText: 'Message'),
+              textCapitalization: TextCapitalization.sentences,
+              validator: (v) => required(v, 'message'),
+            ),
+            const SizedBox(height: 8),
+            Text('Send to', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 4),
+            SegmentedButton<AnnouncementAudience>(
+              showSelectedIcon: false,
+              segments: [
+                for (final a in AnnouncementAudience.values)
+                  ButtonSegment(value: a, label: Text(_audienceLabels[a]!)),
+              ],
+              selected: {_audience},
+              onSelectionChanged: (s) => setState(() => _audience = s.single),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _busy ? null : _post,
+              icon: const Icon(Icons.send),
+              label: Text(_busy ? 'Sending…' : 'Send announcement'),
+            ),
+          ],
         ),
       ),
     );

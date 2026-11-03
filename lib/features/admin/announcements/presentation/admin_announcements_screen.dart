@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../notifications/presentation/announcements_screen.dart';
 import '../../../notifications/providers.dart';
+import '../../widgets/page_header.dart';
+import '../../widgets/section_card.dart';
+import '../../widgets/status_views.dart';
 import 'announcement_composer.dart';
 
 /// Post announcements and see what has been sent (PRD §4.7).
@@ -13,63 +16,77 @@ class AdminAnnouncementsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Admins see every audience.
     final sent = ref.watch(announcementsProvider);
-    final history = sent.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, _) =>
-          const Center(child: Text('Could not load announcements.')),
-      data: (list) => list.isEmpty
-          ? const Center(child: Text('Nothing sent yet.'))
-          : ListView.separated(
-              itemCount: list.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (_, i) =>
-                  AnnouncementCard(announcement: list[i], showAudience: true),
-            ),
+    final count = sent.value?.length;
+    final history = SectionCard(
+      title: 'Sent',
+      subtitle: count == null
+          ? null
+          : '$count announcement${count == 1 ? '' : 's'}',
+      icon: Icons.outbox_outlined,
+      expand: true,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: sent.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) => const EmptyState.error('announcements'),
+        data: (list) => list.isEmpty
+            ? const EmptyState(
+                icon: Icons.campaign_outlined,
+                title: 'Nothing sent yet',
+                message: 'Announcements you send will be listed here.',
+              )
+            : ListView.separated(
+                itemCount: list.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (_, i) =>
+                    AnnouncementCard(announcement: list[i], showAudience: true),
+              ),
+      ),
+    );
+    const header = PageHeader(
+      title: 'Announcements',
+      subtitle:
+          'Send safety notices to phones. Each one arrives as a '
+          'notification.',
     );
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final title = Text(
-            'Announcements',
-            style: Theme.of(context).textTheme.headlineSmall,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 900) {
+          return ListView(
+            padding: kPagePadding,
+            children: [
+              header,
+              const AnnouncementComposer(),
+              const SizedBox(height: kGap),
+              SizedBox(height: 520, child: history),
+            ],
           );
-          if (constraints.maxWidth < 900) {
-            return ListView(
-              children: [
-                title,
-                const SizedBox(height: 12),
-                const AnnouncementComposer(),
-                const SizedBox(height: 16),
-                SizedBox(height: 500, child: history),
-              ],
-            );
-          }
-          return Column(
+        }
+        return Padding(
+          padding: kPagePadding,
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              title,
-              const SizedBox(height: 12),
+              header,
               Expanded(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(
-                      width: 520,
+                      width: 500,
                       child: SingleChildScrollView(
                         child: AnnouncementComposer(),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: kGap),
                     Expanded(child: history),
                   ],
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

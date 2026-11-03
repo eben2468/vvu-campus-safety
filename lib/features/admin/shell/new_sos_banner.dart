@@ -96,7 +96,7 @@ class _NewSosBannerState extends ConsumerState<NewSosBanner> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       color: _bright ? AppColors.sosRed : const Color(0xFF8B0000),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
       child: Row(
         children: [
           const Icon(Icons.sos, color: Colors.white, size: 32),

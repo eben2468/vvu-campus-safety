@@ -8,8 +8,13 @@ address are told to use the phone app; only admins can use the dashboard.
 On a phone, an admin account opens the officer screens, so you can also
 accept and handle alerts in the field (User manual, Part B).
 
-The menu on the left has nine pages. A red **New SOS** banner appears at
-the top of any page when an SOS arrives (see §1).
+The dark menu on the left has eight pages in three groups:
+**Operations** (Live board, Incidents, Analytics), **People** (Users,
+ID roster, Announcements) and **System** (Settings, Audit log). Your name
+and the **sign out** button are at the bottom of the menu. On a narrower
+window the menu shows icons only; point at one to see its name. A red
+**New SOS** banner appears at the top of any page when an SOS arrives
+(see §1).
 
 ## 1. Live board
 
@@ -59,9 +64,11 @@ Close the panel with **X** or by clicking outside it.
 - The **map** shows where incidents happened: each circle covers about
   50 m, and bigger, redder circles mean more incidents. The number on each
   circle is how many incidents happened there.
+- **Totals** at the top: incidents, SOS alerts, average response time and
+  false alarms for the chosen period.
 - **Charts:** incidents by category, incidents per week (weeks start on
   Monday), and the average response time per week.
-- **Export CSV** downloads exactly the incidents shown, for Excel or
+- **Export CSV** (top right) downloads exactly the incidents shown, for Excel or
   reports. Times are Ghana time.
 
 ## 4. Users
@@ -87,13 +94,16 @@ You can't change your own role or deactivate yourself; ask another admin.
 
 Students and staff can only register with an ID on the roster.
 
-1. Ask the Registry (students) or HR (staff) for a CSV file with the
-   columns `idNumber,fullName,type,department`, where type is `student` or
-   `staff`. A fifth column `active` set to `false` blocks an ID (for
-   example a student who has left). A header row is optional.
-2. Click **Choose CSV file**. The page shows the first rows and lists any
-   lines it will skip and why.
-3. Click **Import**. The result shows how many IDs were imported and which
+1. Click **Download sample CSV** and open the file in Excel or Google
+   Sheets. It has the right columns and six example rows.
+2. Replace the example rows with the list from the Registry (students) or
+   HR (staff), one person per row, keeping the header row. The columns are
+   `idNumber,fullName,type,department,active`: type is `student` or
+   `staff`; `active` set to `false` blocks an ID (for example a student who
+   has left). The page lists each column and whether it is required.
+3. Save as CSV (comma separated), then click **Choose CSV file**. The
+   preview shows the first rows and lists any lines it will skip and why.
+4. Click **Import**. The result shows how many IDs were imported and which
    rows were rejected.
 
 Importing an updated list each semester is safe: existing IDs are updated
@@ -121,7 +131,7 @@ announcement list. Sent announcements are listed on the right.
   line, e.g. `Hostels, 5.795, -0.124, 150`. Incidents inside a zone are
   labelled with its name ("near Hostels").
 
-Click **Save settings**. Errors name the line to fix. Every change is
+Click **Save settings** (top right). Errors name the line to fix. Every change is
 recorded in the audit log.
 
 ## 8. Audit log

@@ -9,7 +9,10 @@ import '../../../auth/presentation/widgets/auth_scaffold.dart';
 import '../../data/admin_repository.dart';
 import '../../data/roster_csv.dart';
 import '../../providers.dart';
+import '../../widgets/page_header.dart';
+import 'widgets/roster_guide.dart';
 import 'widgets/roster_preview.dart';
+import 'widgets/roster_upload.dart';
 
 /// Imports the Registry's list of student and staff IDs (PRD §4.11), which
 /// `verifyId` checks when someone registers.
@@ -64,69 +67,51 @@ class _RosterImportScreenState extends ConsumerState<RosterImportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final parsed = _parsed;
-    final result = _result;
+    final upload = RosterUpload(
+      fileName: _fileName,
+      parsed: parsed,
+      result: _result,
+      busy: _busy,
+      onChoose: _chooseFile,
+      onImport: _import,
+    );
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: kPagePadding,
       children: [
-        Text('ID roster', style: textTheme.headlineSmall),
-        const SizedBox(height: 8),
-        const Text(
-          'Students and staff can only register with an ID on this list. '
-          'Upload a CSV file with the columns idNumber, fullName, type and '
-          'department, where type is student or staff. A fifth column, '
-          'active, can be set to false to block an ID. A header row is '
-          'optional. IDs that are already on the list are updated and stay '
-          'linked to their accounts.',
+        const PageHeader(
+          title: 'ID roster',
+          subtitle:
+              'Students and staff can only register with an ID on this '
+              'list.',
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Example: 223IT0100001,Kwame Mensah,student,Information Technology',
-          style: textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+        if (_error != null) FormMessage(_error!),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 1000) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  upload,
+                  const SizedBox(height: kGap),
+                  const RosterGuide(),
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Expanded(child: RosterGuide()),
+                const SizedBox(width: kGap),
+                Expanded(child: upload),
+              ],
+            );
+          },
         ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            OutlinedButton.icon(
-              onPressed: _busy ? null : _chooseFile,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Choose CSV file'),
-            ),
-            if (_fileName != null) Text(_fileName!),
-          ],
-        ),
-        if (_error != null) ...[
-          const SizedBox(height: 12),
-          FormMessage(_error!),
-        ],
         if (parsed != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: kGap),
           RosterPreview(parsed: parsed),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: FilledButton.icon(
-              onPressed: _busy || parsed.rows.isEmpty ? null : _import,
-              icon: const Icon(Icons.cloud_upload),
-              label: Text(
-                _busy ? 'Importing…' : 'Import ${parsed.rows.length} IDs',
-              ),
-            ),
-          ),
-        ],
-        if (result != null) ...[
-          const SizedBox(height: 16),
-          FormMessage(
-            'Imported ${result.imported} IDs.'
-            '${result.rejectedCount == 0 ? '' : ' ${result.rejectedCount} rows were skipped.'}',
-            isError: false,
-          ),
-          for (final line in result.rejected) Text(line),
         ],
       ],
     );

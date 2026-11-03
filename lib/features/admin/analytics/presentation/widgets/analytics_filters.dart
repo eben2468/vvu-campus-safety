@@ -8,10 +8,7 @@ import '../../../providers.dart';
 
 /// Date range and category for the analytics page.
 class AnalyticsFilters extends ConsumerWidget {
-  const AnalyticsFilters({super.key, required this.trailing});
-
-  /// Shown at the end of the row (the export button).
-  final Widget trailing;
+  const AnalyticsFilters({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -49,7 +46,8 @@ class AnalyticsFilters extends ConsumerWidget {
           ),
         ),
         DropdownMenu<String?>(
-          label: const Text('Category'),
+          width: 220,
+          leadingIcon: const Icon(Icons.category_outlined),
           initialSelection: filter.category,
           onSelected: notifier.setCategory,
           dropdownMenuEntries: [
@@ -58,7 +56,6 @@ class AnalyticsFilters extends ConsumerWidget {
             for (final c in categories) DropdownMenuEntry(value: c, label: c),
           ],
         ),
-        trailing,
       ],
     );
   }

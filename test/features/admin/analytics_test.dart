@@ -162,7 +162,7 @@ void main() {
       entry('settings_updated', {
         'fields': ['zones', 'securityPhone'],
       }).describe(nameOf),
-      'Changed settings: zones, securityPhone.',
+      'Changed settings: campus zones, Security Office number.',
     );
   });
 

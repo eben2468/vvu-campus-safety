@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/theme.dart';
+
 /// Report categories as removable chips plus a box to add one.
 class CategoryEditor extends StatefulWidget {
   const CategoryEditor({
@@ -65,8 +67,9 @@ class _CategoryEditorState extends State<CategoryEditor> {
               ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
               width: 260,
@@ -82,11 +85,17 @@ class _CategoryEditorState extends State<CategoryEditor> {
               ),
             ),
             const SizedBox(width: 8),
-            OutlinedButton(onPressed: _add, child: const Text('Add')),
+            OutlinedButton.icon(
+              onPressed: _add,
+              icon: const Icon(Icons.add),
+              label: const Text('Add'),
+            ),
           ],
         ),
-        const Text(
+        Text(
           'Existing reports keep their category if you remove it here.',
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: AppColors.muted),
         ),
       ],
     );

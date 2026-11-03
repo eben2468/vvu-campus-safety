@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme.dart';
 import '../../../../models/app_user.dart';
 import '../../../auth/providers.dart';
 import '../../data/admin_repository.dart';
 import '../../providers.dart';
+import '../../widgets/page_header.dart';
+import '../../widgets/status_views.dart';
 import 'widgets/create_user_dialog.dart';
-import 'widgets/user_actions.dart';
+import 'widgets/user_table.dart';
 
 /// Users page (PRD §4.11): list and search users, add officers and admins,
 /// change roles and deactivate accounts.
@@ -50,138 +51,79 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     final myUid = ref.watch(sessionProvider.select((s) => s.profile?.uid));
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: kPagePadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Users',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ),
+          PageHeader(
+            title: 'Users',
+            subtitle:
+                'Find anyone with an account, add security staff and '
+                'manage roles.',
+            actions: [
               FilledButton.icon(
                 onPressed: _create,
-                icon: const Icon(Icons.person_add),
+                icon: const Icon(Icons.person_add_alt_1),
                 label: const Text('Add officer or admin'),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              SegmentedButton<UserGroup>(
-                segments: [
-                  for (final g in UserGroup.values)
-                    ButtonSegment(value: g, label: Text(g.label)),
-                ],
-                selected: {group},
-                onSelectionChanged: (s) =>
-                    ref.read(userGroupProvider.notifier).set(s.single),
-              ),
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Search name, email, phone or ID',
-                    isDense: true,
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  SegmentedButton<UserGroup>(
+                    showSelectedIcon: false,
+                    segments: [
+                      for (final g in UserGroup.values)
+                        ButtonSegment(value: g, label: Text(g.label)),
+                    ],
+                    selected: {group},
+                    onSelectionChanged: (s) =>
+                        ref.read(userGroupProvider.notifier).set(s.single),
                   ),
-                  onChanged: (text) => setState(() => _search = text),
-                ),
+                  SizedBox(
+                    width: 320,
+                    child: TextField(
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Search name, email, phone or ID',
+                      ),
+                      onChanged: (text) => setState(() => _search = text),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: kGap),
           Expanded(
             child: Card(
-              margin: EdgeInsets.zero,
+              clipBehavior: Clip.antiAlias,
               child: users.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) =>
-                    const Center(child: Text('Could not load users.')),
+                error: (_, _) => const EmptyState.error('users'),
                 data: (list) {
                   final shown = list.where(_matches).toList();
                   if (shown.isEmpty) {
-                    return const Center(child: Text('No users match.'));
+                    return EmptyState(
+                      icon: Icons.person_search_outlined,
+                      title: list.isEmpty
+                          ? 'No ${group.label.toLowerCase()} yet'
+                          : 'No users match "$_search"',
+                    );
                   }
-                  return _UserTable(users: shown, myUid: myUid);
+                  return UserTable(users: shown, myUid: myUid);
                 },
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _UserTable extends StatelessWidget {
-  const _UserTable({required this.users, required this.myUid});
-
-  final List<AppUser> users;
-  final String? myUid;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Name')),
-            DataColumn(label: Text('Email')),
-            DataColumn(label: Text('Phone')),
-            DataColumn(label: Text('Role')),
-            DataColumn(label: Text('VVU ID')),
-            DataColumn(label: Text('Status')),
-            DataColumn(label: Text('')),
-          ],
-          rows: [
-            for (final user in users)
-              DataRow(
-                cells: [
-                  DataCell(Text(user.fullName)),
-                  DataCell(Text(user.email)),
-                  DataCell(Text(user.phone)),
-                  DataCell(Text(roleLabel(user.role))),
-                  DataCell(Text(user.idNumber ?? '—')),
-                  DataCell(_status(user)),
-                  DataCell(
-                    // Admins can't change their own account (adminSetRole).
-                    user.uid == myUid
-                        ? const Text('You')
-                        : UserActions(user: user),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Widget _status(AppUser user) {
-    if (user.deactivated) {
-      return const Text(
-        'Deactivated',
-        style: TextStyle(color: AppColors.sosRed),
-      );
-    }
-    if (user.onDuty) {
-      return const Text(
-        'On duty',
-        style: TextStyle(color: AppColors.safeGreen),
-      );
-    }
-    return Text(
-      user.falseAlarmCount > 0
-          ? 'Active · ${user.falseAlarmCount} false alarm(s)'
-          : 'Active',
     );
   }
 }

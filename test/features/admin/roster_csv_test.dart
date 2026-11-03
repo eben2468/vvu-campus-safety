@@ -40,7 +40,7 @@ void main() {
 
     test('reports bad lines by number and ignores blank ones', () {
       final csv = parseRosterCsv(
-        '﻿idNumber,fullName,type,department\n'
+        '﻿idNumber,fullName,type,department\n' // Excel's byte-order mark
         '223IT0100001,Kwame Mensah,visitor,IT\n'
         '\n'
         'only-two,columns\n'
@@ -60,5 +60,14 @@ void main() {
       final csv = parseRosterCsv('STF00031,Kwesi Appiah,staff');
       expect(csv.rows.single.department, '');
     });
+  });
+
+  test('the downloadable sample imports cleanly', () {
+    final parsed = parseRosterCsv(sampleRosterCsv);
+    expect(parsed.errors, isEmpty);
+    expect(parsed.rows, hasLength(6)); // the guide says "6 example rows"
+    expect(parsed.rows.map((r) => r.fullName), contains('Mensah, Adwoa'));
+    expect(parsed.rows.where((r) => !r.active), hasLength(1));
+    expect(parsed.rows.where((r) => r.type == 'staff'), hasLength(2));
   });
 }

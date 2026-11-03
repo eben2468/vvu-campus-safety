@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -81,8 +82,9 @@ class _AppState extends ConsumerState<App> {
     return MaterialApp.router(
       title: 'VVU Campus Safety',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      // The web build is the admin dashboard; it has its own denser look.
+      theme: kIsWeb ? AppTheme.dashboard() : AppTheme.light(),
+      darkTheme: kIsWeb ? AppTheme.dashboard() : AppTheme.dark(),
       routerConfig: ref.watch(routerProvider),
     );
   }

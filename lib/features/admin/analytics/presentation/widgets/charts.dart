@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../../core/theme.dart';
 import '../../../data/analytics.dart';
+import '../../../widgets/section_card.dart';
 
 /// A titled card with a fixed-height chart in it.
 class ChartCard extends StatelessWidget {
@@ -11,28 +12,27 @@ class ChartCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.child,
+    this.icon = Icons.bar_chart,
+    this.subtitle,
     this.height = 240,
+    this.padding = const EdgeInsets.fromLTRB(20, 8, 20, 20),
   });
 
   final String title;
   final Widget child;
+  final IconData icon;
+  final String? subtitle;
   final double height;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            SizedBox(height: height, child: child),
-          ],
-        ),
-      ),
+    return SectionCard(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      padding: padding,
+      child: SizedBox(height: height, child: child),
     );
   }
 }

@@ -52,8 +52,17 @@ class AuditLogEntry {
         'Imported ${details['imported'] ?? 0} IDs into the roster'
             '${(details['rejected'] ?? 0) == 0 ? '' : ' (${details['rejected']} rows skipped)'}.',
       'settings_updated' =>
-        'Changed settings: ${(details['fields'] as List? ?? const []).join(', ')}.',
+        'Changed settings: ${[for (final f in details['fields'] as List? ?? const []) _settingNames[f] ?? '$f'].join(', ')}.',
       _ => '$action on $who.',
     };
   }
+
+  /// Plain names for the `settings/app` fields, as on the settings page.
+  static const _settingNames = {
+    'categories': 'report categories',
+    'securityPhone': 'Security Office number',
+    'sosCountdownSec': 'SOS countdown',
+    'campusBoundary': 'campus boundary',
+    'zones': 'campus zones',
+  };
 }
