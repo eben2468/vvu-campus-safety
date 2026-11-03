@@ -85,7 +85,19 @@ flutter run -d <android-device> --dart-define=USE_EMULATOR=true
 flutter run -d chrome --web-port 5000 --dart-define=USE_EMULATOR=true
 ```
 
-Android emulator reaches your machine's emulators at `10.0.2.2` (the default in `main.dart`); a physical phone needs your PC's LAN IP via `--dart-define=EMULATOR_HOST=192.168.x.x`. Emulator UI: http://localhost:4000. Hosting emulator: port 5002 (5000 is used by `flutter run -d chrome`).
+Android emulator reaches your machine's emulators at `10.0.2.2` (the default in `main.dart`). Emulator UI: http://localhost:4000. Hosting emulator: port 5002 (5000 is used by `flutter run -d chrome`).
+
+A physical phone has two options:
+
+- **USB (no shared Wi-Fi needed):** enable USB debugging, forward the ports, then run with `127.0.0.1`:
+
+  ```bash
+  for p in 9099 8080 5001 9199; do adb reverse tcp:$p tcp:$p; done
+  flutter run -d <phone-id> --dart-define=USE_EMULATOR=true --dart-define=EMULATOR_HOST=127.0.0.1
+  ```
+
+  The forwarding is lost whenever the USB connection resets; run the `adb reverse` lines again if sign-in suddenly says "No internet connection".
+- **Same Wi-Fi:** `--dart-define=EMULATOR_HOST=<PC LAN IP>`, with the emulators listening on all interfaces (`"host": "0.0.0.0"` per emulator in `firebase.json`) and the ports allowed through the firewall.
 
 Note: FCM push doesn't fully work in the emulator — test push notifications against the real project with a physical phone.
 

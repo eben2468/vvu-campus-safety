@@ -34,8 +34,10 @@ class DefaultFirebaseOptions {
     storageBucket: 'demo-vvu-campus-safety.appspot.com',
   );
 
+  // The Android SDKs reject a key that isn't shaped like a real one
+  // ("AIza" + 35 characters), so this fake key keeps that shape.
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'demo-api-key',
+    apiKey: 'AIzaDemoKeyForLocalEmulatorUse000000000',
     appId: '1:000000000000:android:0000000000000000000000',
     messagingSenderId: '000000000000',
     projectId: 'demo-vvu-campus-safety',

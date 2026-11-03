@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/errors/app_exception.dart';
 import 'session.dart';
@@ -148,6 +149,7 @@ class AuthRepository {
       case 'deadline-exceeded':
         return "Can't reach the server. Check your connection and try again.";
       default:
+        debugPrint('verifyId failed: ${e.code} ${e.message} ${e.details}');
         return 'Something went wrong verifying your ID. Please try again.';
     }
   }
