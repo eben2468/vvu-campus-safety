@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -42,6 +43,25 @@ class _AppState extends ConsumerState<App> {
         ref
             .read(signOutNoticeProvider.notifier)
             .show(accountDeactivatedMessage);
+        ref.read(authRepositoryProvider).signOut();
+      }
+    });
+
+    // The saved sign-in belongs to an account that was deleted or disabled
+    // while the app was closed: clear it so the login screen works.
+    ref.listen(tokenClaimsProvider, (_, next) {
+      final error = next.error;
+      if (error != null) debugPrint('Reading sign-in claims failed: $error');
+      if (isAccountGone(error)) {
+        ref
+            .read(signOutNoticeProvider.notifier)
+            .show(
+              error is FirebaseAuthException &&
+                      (error.code == 'user-disabled' ||
+                          (error.message ?? '').contains('USER_DISABLED'))
+                  ? accountDeactivatedMessage
+                  : sessionEndedMessage,
+            );
         ref.read(authRepositoryProvider).signOut();
       }
     });

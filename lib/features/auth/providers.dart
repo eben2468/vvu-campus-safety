@@ -26,12 +26,18 @@ final authUserProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).idTokenChanges();
 });
 
-/// Custom claims for the current token.
-final tokenClaimsProvider = FutureProvider<TokenClaims?>((ref) async {
-  final user = ref.watch(authUserProvider).value;
-  if (user == null) return null;
-  return ref.watch(authRepositoryProvider).claimsFor(user);
-});
+/// Custom claims for the current token. Network failures are retried; an
+/// account that no longer exists is not (the app signs out instead).
+final tokenClaimsProvider = FutureProvider<TokenClaims?>(
+  (ref) async {
+    final user = ref.watch(authUserProvider).value;
+    if (user == null) return null;
+    return ref.watch(authRepositoryProvider).claimsFor(user);
+  },
+  retry: (count, error) => isAccountGone(error)
+      ? null
+      : Duration(seconds: (2 << count.clamp(0, 4)).toInt()),
+);
 
 /// The signed-in user's `users/{uid}` profile.
 final currentProfileProvider = StreamProvider<AppUser?>((ref) {
@@ -48,7 +54,10 @@ final sessionProvider = Provider<Session>((ref) {
   final user = authUser.value;
   if (user == null) return Session.signedOut;
 
-  final claims = ref.watch(tokenClaimsProvider).value;
+  final claimsState = ref.watch(tokenClaimsProvider);
+  // A deleted or disabled account would otherwise "load" forever.
+  if (isAccountGone(claimsState.error)) return Session.signedOut;
+  final claims = claimsState.value;
   // A stale value from a previous user counts as still loading.
   if (claims == null || claims.uid != user.uid) return Session.loading;
   if (!claims.canUseApp) return Session.unverified;

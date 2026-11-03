@@ -8,6 +8,31 @@ import 'session.dart';
 const accountDeactivatedMessage =
     'This account has been deactivated. Contact the Security Office.';
 
+const sessionEndedMessage = 'Your session has ended. Please log in again.';
+
+/// True when the signed-in account can't be used any more (deleted,
+/// disabled or its sign-in revoked), as opposed to e.g. being offline.
+/// Android sometimes reports these as code `unknown` with the server's
+/// reason (e.g. `INVALID_REFRESH_TOKEN`) only in the message.
+bool isAccountGone(Object? error) {
+  if (error is! FirebaseAuthException) return false;
+  const codes = {
+    'user-not-found',
+    'user-disabled',
+    'user-token-expired',
+    'invalid-user-token',
+  };
+  const serverReasons = [
+    'INVALID_REFRESH_TOKEN',
+    'USER_NOT_FOUND',
+    'USER_DISABLED',
+    'TOKEN_EXPIRED',
+  ];
+  final message = error.message ?? '';
+  return codes.contains(error.code) ||
+      serverReasons.any((reason) => message.contains(reason));
+}
+
 /// Sign-in, registration and ID verification. Firebase errors are turned
 /// into [AppException]s with plain-English messages.
 class AuthRepository {
