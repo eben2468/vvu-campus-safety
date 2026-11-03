@@ -1,11 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants.dart';
+import '../../../../core/theme.dart';
+import '../../../../core/widgets/osm_layers.dart';
 
-/// A map with a pin the user can move by tapping or dragging, to mark
-/// where an incident happened.
+/// A map with a pin the user can move by tapping, to mark where an
+/// incident happened.
 class LocationPicker extends StatefulWidget {
   const LocationPicker({
     super.key,
@@ -22,7 +25,8 @@ class LocationPicker extends StatefulWidget {
 }
 
 class _LocationPickerState extends State<LocationPicker> {
-  GoogleMapController? _controller;
+  final _controller = MapController();
+  bool _ready = false;
 
   static const _campus = LatLng(campusCenterLat, campusCenterLng);
 
@@ -31,14 +35,14 @@ class _LocationPickerState extends State<LocationPicker> {
     super.didUpdateWidget(oldWidget);
     // Follow the first GPS fix; after that the user is in control.
     final value = widget.value;
-    if (oldWidget.value == null && value != null) {
-      _controller?.animateCamera(CameraUpdate.newLatLng(_latLng(value)));
+    if (_ready && oldWidget.value == null && value != null) {
+      _controller.move(toLatLng(value), _controller.camera.zoom);
     }
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -56,36 +60,40 @@ class _LocationPickerState extends State<LocationPicker> {
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 4),
-        const Text('Tap the map or drag the pin to the right spot.'),
+        const Text('Tap the map to move the pin to the right spot.'),
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: SizedBox(
             height: 220,
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: value == null ? _campus : _latLng(value),
-                zoom: 16,
+            child: FlutterMap(
+              mapController: _controller,
+              options: MapOptions(
+                initialCenter: value == null ? _campus : toLatLng(value),
+                initialZoom: 16,
+                onMapReady: () => _ready = true,
+                onTap: (_, point) => _set(point),
               ),
-              onMapCreated: (controller) => _controller = controller,
-              onTap: _set,
-              markers: {
-                if (value != null)
-                  Marker(
-                    markerId: const MarkerId('incident'),
-                    position: _latLng(value),
-                    draggable: true,
-                    onDragEnd: _set,
-                  ),
-              },
-              myLocationButtonEnabled: false,
+              children: [
+                osmTileLayer(),
+                MarkerLayer(
+                  markers: [
+                    if (value != null)
+                      Marker(
+                        point: toLatLng(value),
+                        width: 40,
+                        height: 40,
+                        alignment: MapPin.tipAlignment,
+                        child: const MapPin(color: AppColors.sosRed),
+                      ),
+                  ],
+                ),
+                osmAttribution(),
+              ],
             ),
           ),
         ),
       ],
     );
   }
-
-  static LatLng _latLng(GeoPoint point) =>
-      LatLng(point.latitude, point.longitude);
 }

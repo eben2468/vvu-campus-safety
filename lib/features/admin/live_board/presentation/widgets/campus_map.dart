@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../../core/constants.dart';
 import '../../../../../core/theme.dart';
-import '../../../../../core/widgets/maps_unavailable.dart';
+import '../../../../../core/widgets/osm_layers.dart';
 import '../../../../../models/app_settings.dart';
 import '../../../../../models/incident.dart';
-import '../../../../../services/maps_support.dart';
 
-/// The campus with a marker for every open incident: red for SOS, blue for
-/// reports. Incidents without a location are only in the list.
+/// The campus with a pin for every open incident: red for SOS, blue for
+/// reports. Hover a pin for who and what; click it to open the incident.
+/// Incidents without a location are only in the list.
 class CampusMap extends StatelessWidget {
   const CampusMap({
     super.key,
@@ -24,48 +25,54 @@ class CampusMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!mapsAvailable) return const MapsUnavailable();
-    return GoogleMap(
-      initialCameraPosition: const CameraPosition(
-        target: LatLng(campusCenterLat, campusCenterLng),
-        zoom: 16,
+    // Reports first so SOS pins are drawn on top.
+    final located = [
+      for (final incident in incidents)
+        if (incident.currentLocation != null) incident,
+    ]..sort((a, b) => (a.isSos ? 1 : 0).compareTo(b.isSos ? 1 : 0));
+
+    return FlutterMap(
+      options: const MapOptions(
+        initialCenter: LatLng(campusCenterLat, campusCenterLng),
+        initialZoom: 16,
       ),
-      markers: {
-        for (final incident in incidents)
-          if (incident.currentLocation case final point?)
-            Marker(
-              markerId: MarkerId(incident.id),
-              position: LatLng(point.latitude, point.longitude),
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                incident.isSos
-                    ? BitmapDescriptor.hueRed
-                    : BitmapDescriptor.hueAzure,
+      children: [
+        osmTileLayer(),
+        campusBoundaryLayer(
+          settings.campusBoundary,
+          fill: AppColors.vvuBlue.withValues(alpha: 0.05),
+        ),
+        MarkerLayer(
+          markers: [
+            for (final incident in located)
+              Marker(
+                point: toLatLng(incident.currentLocation!),
+                width: 40,
+                height: 40,
+                alignment: MapPin.tipAlignment,
+                child: Tooltip(
+                  message: incident.isSos
+                      ? 'SOS — ${incident.reporterName} '
+                            '(${incident.status.label})'
+                      : '${incident.category} — ${incident.reporterName} '
+                            '(${incident.status.label})',
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => onOpen(incident),
+                      child: MapPin(
+                        color: incident.isSos
+                            ? AppColors.sosRed
+                            : AppColors.vvuBlue,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              // SOS markers sit on top of reports.
-              zIndexInt: incident.isSos ? 1 : 0,
-              infoWindow: InfoWindow(
-                title: incident.isSos
-                    ? 'SOS — ${incident.reporterName}'
-                    : '${incident.category} — ${incident.reporterName}',
-                snippet: incident.status.label,
-                onTap: () => onOpen(incident),
-              ),
-            ),
-      },
-      polygons: {
-        if (settings.campusBoundary.length >= 3)
-          Polygon(
-            polygonId: const PolygonId('campus'),
-            points: [
-              for (final p in settings.campusBoundary)
-                LatLng(p.latitude, p.longitude),
-            ],
-            strokeColor: AppColors.vvuBlue,
-            strokeWidth: 2,
-            fillColor: AppColors.vvuBlue.withValues(alpha: 0.05),
-          ),
-      },
-      myLocationButtonEnabled: false,
+          ],
+        ),
+        osmAttribution(),
+      ],
     );
   }
 }

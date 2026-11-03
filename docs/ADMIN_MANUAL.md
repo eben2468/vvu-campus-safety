@@ -19,8 +19,8 @@ The page to keep open in the Security Office.
   response time (raised → accepted) today and over 7 days, and the
   incidents resolved today.
 - **Campus map:** every open incident with a known location; red markers
-  are SOS alerts, blue are reports. Click a marker, then its label, to
-  open it.
+  are SOS alerts, blue are reports. Point at a pin to see who raised it;
+  click it to open the incident.
 - **Open incidents:** the same incidents as a list, SOS first.
 - **Recent activity:** the latest updates from every incident. Click one
   to open its incident.
@@ -57,8 +57,8 @@ Close the panel with **X** or by clicking outside it.
 - Choose a **date range** (default: the last 30 days) and a **category**
   (or "SOS alerts").
 - The **map** shows where incidents happened: each circle covers about
-  50 m, and bigger, redder circles mean more incidents. Click a circle for
-  its count.
+  50 m, and bigger, redder circles mean more incidents. The number on each
+  circle is how many incidents happened there.
 - **Charts:** incidents by category, incidents per week (weeks start on
   Monday), and the average response time per week.
 - **Export CSV** downloads exactly the incidents shown, for Excel or

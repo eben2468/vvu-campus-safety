@@ -30,7 +30,7 @@ This is a final-year BSc IT project (proposal: "Design and Implementation of a S
 - State: `flutter_riverpod` (with code-gen optional; plain providers are fine).
 - Routing: `go_router` with role-based redirects.
 - Firebase: `firebase_core`, `firebase_auth`, `cloud_firestore`, `firebase_storage`, `firebase_messaging`, `cloud_functions`. Configure with FlutterFire CLI (`firebase_options.dart`).
-- Location and maps: `geolocator`, `google_maps_flutter` (web via `google_maps_flutter_web`).
+- Location and maps: `geolocator`, `flutter_map` + `latlong2` with OpenStreetMap tiles (no API key; see DECISIONS D50). Directions open Google Maps by URL via `url_launcher`.
 - Media: `image_picker`, `flutter_image_compress`.
 - Other: `flutter_local_notifications` (foreground alerts), `url_launcher` (call / navigate), `fl_chart` (dashboard charts), `intl`.
 - Cloud Functions: TypeScript, Firebase Functions v2, Node LTS, in `/functions`.

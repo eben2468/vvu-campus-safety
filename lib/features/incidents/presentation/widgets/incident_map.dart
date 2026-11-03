@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
 
-import '../../../../core/widgets/maps_unavailable.dart';
-import '../../../../services/maps_support.dart';
+import '../../../../core/theme.dart';
+import '../../../../core/widgets/osm_layers.dart';
 
 /// A map centred on an incident's position, following it as it moves.
 class IncidentMap extends StatefulWidget {
@@ -27,20 +27,21 @@ class IncidentMap extends StatefulWidget {
 }
 
 class _IncidentMapState extends State<IncidentMap> {
-  GoogleMapController? _controller;
+  final _controller = MapController();
+  bool _ready = false;
 
   @override
   void didUpdateWidget(IncidentMap oldWidget) {
     super.didUpdateWidget(oldWidget);
     final point = widget.point;
-    if (point != null && point != oldWidget.point) {
-      _controller?.animateCamera(CameraUpdate.newLatLng(_latLng(point)));
+    if (_ready && point != null && point != oldWidget.point) {
+      _controller.move(toLatLng(point), _controller.camera.zoom);
     }
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -58,21 +59,31 @@ class _IncidentMapState extends State<IncidentMap> {
         ),
       );
     }
-    if (!mapsAvailable) return const MapsUnavailable();
-    return GoogleMap(
-      initialCameraPosition: CameraPosition(target: _latLng(point), zoom: 17),
-      onMapCreated: (controller) => _controller = controller,
-      markers: {
-        Marker(
-          markerId: const MarkerId('reporter'),
-          position: _latLng(point),
-          infoWindow: InfoWindow(title: widget.label ?? 'Reporter'),
+    return FlutterMap(
+      mapController: _controller,
+      options: MapOptions(
+        initialCenter: toLatLng(point),
+        initialZoom: 17,
+        onMapReady: () => _ready = true,
+      ),
+      children: [
+        osmTileLayer(),
+        MarkerLayer(
+          markers: [
+            Marker(
+              point: toLatLng(point),
+              width: 40,
+              height: 40,
+              alignment: MapPin.tipAlignment,
+              child: Tooltip(
+                message: widget.label ?? 'Reporter',
+                child: const MapPin(color: AppColors.sosRed),
+              ),
+            ),
+          ],
         ),
-      },
-      myLocationButtonEnabled: false,
+        osmAttribution(),
+      ],
     );
   }
-
-  static LatLng _latLng(GeoPoint point) =>
-      LatLng(point.latitude, point.longitude);
 }

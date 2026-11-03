@@ -74,7 +74,7 @@ something suspicious.
 2. Choose what happened (for example Theft) and describe it: what, when,
    and anyone involved (at least 10 characters).
 3. Optional: add up to 3 photos with **Camera** or **Gallery**.
-4. Check the pin on the map. Tap the map or drag the pin if it happened
+4. Check the pin on the map. Tap the map to move the pin if it happened
    somewhere else.
 5. Tap **Send report**. Security sees your name and phone number with the
    report.

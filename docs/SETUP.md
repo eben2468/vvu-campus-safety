@@ -50,14 +50,9 @@ firebase init firestore functions storage hosting emulators
 
 5. Set the Functions region to match Firestore (e.g. `europe-west1`) in `functions/src/index.ts` via `setGlobalOptions({ region: 'europe-west1' })`.
 
-## 4. Google Maps keys
+## 4. Maps
 
-1. In Google Cloud Console (same project) enable **Maps SDK for Android** and **Maps JavaScript API**.
-2. Create two API keys:
-   - Android key, restricted to package `gh.edu.vvu.vvu_campus_safety` + your SHA-1 (`cd android && ./gradlew signingReport`).
-   - Web key, restricted to your Hosting domain and `localhost`.
-3. Android: put `MAPS_API_KEY=...` in `android/local.properties` (git-ignored) and reference it in `AndroidManifest.xml` via manifest placeholders.
-4. Web: add the Maps JS script tag with the web key to `web/index.html`.
+Nothing to set up. The in-app maps use OpenStreetMap tiles through `flutter_map` (DECISIONS D50): no API key, no billing account. They need an internet connection to load tiles. The officer's **Go** button and SMS location links open Google Maps by plain URL, which also needs no key.
 
 ## 5. Android configuration
 

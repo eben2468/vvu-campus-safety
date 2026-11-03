@@ -264,4 +264,4 @@ functions/
 
 - `dev`: Firebase Emulator Suite (auth 9099, firestore 8080, functions 5001, storage 9199, UI 4000). App connects to emulators when `--dart-define=USE_EMULATOR=true`.
 - `prod`: single Firebase project (e.g. `vvu-campus-safety`) on the Blaze plan.
-- Secrets: Google Maps API keys in `android/local.properties` / web `index.html` restricted by package/referrer; SMS key in Functions secrets.
+- Secrets: the SMS key in Functions secrets. Maps need no key: OpenStreetMap tiles via `flutter_map` (DECISIONS D50).
