@@ -3,8 +3,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../../core/constants.dart';
 import '../../../../../core/theme.dart';
+import '../../../../../core/widgets/maps_unavailable.dart';
 import '../../../../../models/app_settings.dart';
 import '../../../../../models/incident.dart';
+import '../../../../../services/maps_support.dart';
 
 /// The campus with a marker for every open incident: red for SOS, blue for
 /// reports. Incidents without a location are only in the list.
@@ -22,6 +24,7 @@ class CampusMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!mapsAvailable) return const MapsUnavailable();
     return GoogleMap(
       initialCameraPosition: const CameraPosition(
         target: LatLng(campusCenterLat, campusCenterLng),

@@ -5,7 +5,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../../core/constants.dart';
 import '../../../../../core/theme.dart';
+import '../../../../../core/widgets/maps_unavailable.dart';
 import '../../../../../models/app_settings.dart';
+import '../../../../../services/maps_support.dart';
 import '../../../data/analytics.dart';
 
 /// The campus with a circle for each grid square that had incidents:
@@ -24,6 +26,7 @@ class HeatmapMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!mapsAvailable) return const MapsUnavailable();
     final most = cells.isEmpty ? 1 : cells.first.count; // sorted, busiest first
     return GoogleMap(
       initialCameraPosition: const CameraPosition(

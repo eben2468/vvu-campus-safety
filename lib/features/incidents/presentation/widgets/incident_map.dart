@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../../core/widgets/maps_unavailable.dart';
+import '../../../../services/maps_support.dart';
+
 /// A map centred on an incident's position, following it as it moves.
 class IncidentMap extends StatefulWidget {
   const IncidentMap({
@@ -55,6 +58,7 @@ class _IncidentMapState extends State<IncidentMap> {
         ),
       );
     }
+    if (!mapsAvailable) return const MapsUnavailable();
     return GoogleMap(
       initialCameraPosition: CameraPosition(target: _latLng(point), zoom: 17),
       onMapCreated: (controller) => _controller = controller,
