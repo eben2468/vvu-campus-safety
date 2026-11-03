@@ -13,23 +13,61 @@ Future<String?> askForNote(
   required String confirmLabel,
   bool required = false,
 }) {
-  final controller = TextEditingController();
-  final formKey = GlobalKey<FormState>();
   return showDialog<String>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
+    builder: (_) => _NoteDialog(
+      title: title,
+      hint: hint,
+      confirmLabel: confirmLabel,
+      required: required,
+    ),
+  );
+}
+
+/// Owns its text controller so it is disposed only after the closing
+/// animation, not as soon as the dialog's future completes.
+class _NoteDialog extends StatefulWidget {
+  const _NoteDialog({
+    required this.title,
+    required this.hint,
+    required this.confirmLabel,
+    required this.required,
+  });
+
+  final String title;
+  final String hint;
+  final String confirmLabel;
+  final bool required;
+
+  @override
+  State<_NoteDialog> createState() => _NoteDialogState();
+}
+
+class _NoteDialogState extends State<_NoteDialog> {
+  final _controller = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
       content: Form(
-        key: formKey,
+        key: _formKey,
         child: TextFormField(
-          controller: controller,
+          controller: _controller,
           autofocus: true,
           minLines: 2,
           maxLines: 5,
           maxLength: 1000,
           textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(hintText: hint),
-          validator: (value) => required && (value ?? '').trim().isEmpty
+          decoration: InputDecoration(hintText: widget.hint),
+          validator: (value) => widget.required && (value ?? '').trim().isEmpty
               ? 'Write a note first.'
               : null,
         ),
@@ -41,15 +79,15 @@ Future<String?> askForNote(
         ),
         FilledButton(
           onPressed: () {
-            if (formKey.currentState!.validate()) {
-              Navigator.pop(context, controller.text.trim());
+            if (_formKey.currentState!.validate()) {
+              Navigator.pop(context, _controller.text.trim());
             }
           },
-          child: Text(confirmLabel),
+          child: Text(widget.confirmLabel),
         ),
       ],
-    ),
-  ).whenComplete(controller.dispose);
+    );
+  }
 }
 
 /// Lets an officer pick a colleague to add to the incident.
