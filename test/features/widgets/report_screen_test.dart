@@ -43,10 +43,11 @@ class FakeReportController extends Fake implements ReportController {
 Future<FakeReportController> pumpReport(
   WidgetTester tester, {
   String? error,
+  // 360 dp wide like a small phone, tall enough for the whole form.
+  Size screen = const Size(1080, 4200),
 }) async {
   final controller = FakeReportController(error: error);
-  // 360 dp wide like a small phone, tall enough for the whole form.
-  tester.view.physicalSize = const Size(1080, 4200);
+  tester.view.physicalSize = screen;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
@@ -123,6 +124,27 @@ void main() {
     expect(controller.description, 'A student fainted outside the library.');
     await tester.pumpAndSettle();
     expect(find.text('Report new-id'), findsOneWidget); // opens the report
+  });
+
+  // Regression: on a real phone the category field scrolled out of view,
+  // a ListView dropped it, validation skipped it and sending crashed.
+  testWidgets('a scrolled-away category is still required', (tester) async {
+    final controller = await pumpReport(
+      tester,
+      screen: const Size(1080, 2340), // 360 x 780 dp
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Description'),
+      'My phone was taken in the library.',
+    );
+    await send(tester); // scrolls down to the button first
+
+    expect(tester.takeException(), isNull);
+    expect(controller.category, isNull);
+    expect(
+      find.text('Choose what happened and describe it, then send.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows why a report could not be sent', (tester) async {

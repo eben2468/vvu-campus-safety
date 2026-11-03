@@ -55,7 +55,16 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final category = _category;
+    if (!_formKey.currentState!.validate() || category == null) {
+      // The highlighted field may be scrolled out of view.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Choose what happened and describe it, then send.'),
+        ),
+      );
+      return;
+    }
     setState(() {
       _submitting = true;
       _error = null;
@@ -64,7 +73,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
       final id = await ref
           .read(reportControllerProvider)
           .submit(
-            category: _category!,
+            category: category,
             description: _description.text,
             photos: _photos,
             location: _location,
@@ -90,60 +99,67 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Report an incident')),
       body: SafeArea(
+        // A Column, not a ListView: a ListView drops fields scrolled out of
+        // view, and Form.validate() then silently skips them.
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            children: [
-              if (_error != null) FormMessage(_error!),
-              DropdownButtonFormField<String>(
-                isExpanded: true, // fit narrow phones and large text
-                initialValue: _category,
-                decoration: const InputDecoration(labelText: 'What happened?'),
-                items: [
-                  for (final c in categories)
-                    DropdownMenuItem(value: c, child: Text(c)),
-                ],
-                onChanged: (value) => setState(() => _category = value),
-                validator: (value) =>
-                    value == null ? 'Choose a category.' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _description,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'What happened, when, and anyone involved',
-                  alignLabelWithHint: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_error != null) FormMessage(_error!),
+                DropdownButtonFormField<String>(
+                  isExpanded: true, // fit narrow phones and large text
+                  initialValue: _category,
+                  decoration: const InputDecoration(
+                    labelText: 'What happened?',
+                  ),
+                  items: [
+                    for (final c in categories)
+                      DropdownMenuItem(value: c, child: Text(c)),
+                  ],
+                  onChanged: (value) => setState(() => _category = value),
+                  validator: (value) =>
+                      value == null ? 'Choose a category.' : null,
                 ),
-                minLines: 4,
-                maxLines: 8,
-                maxLength: maxDescriptionLength,
-                textCapitalization: TextCapitalization.sentences,
-                validator: Validators.reportDescription,
-              ),
-              const SizedBox(height: 8),
-              PhotoPickerField(
-                photos: _photos,
-                onChanged: (photos) => setState(() => _photos = photos),
-              ),
-              const SizedBox(height: 16),
-              LocationPicker(
-                value: _location,
-                onChanged: (point) => setState(() => _location = point),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Security will see your name and phone number with this report.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              SubmitButton(
-                label: 'Send report',
-                busy: _submitting,
-                onPressed: _submit,
-              ),
-            ],
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _description,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    hintText: 'What happened, when, and anyone involved',
+                    alignLabelWithHint: true,
+                  ),
+                  minLines: 4,
+                  maxLines: 8,
+                  maxLength: maxDescriptionLength,
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: Validators.reportDescription,
+                ),
+                const SizedBox(height: 8),
+                PhotoPickerField(
+                  photos: _photos,
+                  onChanged: (photos) => setState(() => _photos = photos),
+                ),
+                const SizedBox(height: 16),
+                LocationPicker(
+                  value: _location,
+                  onChanged: (point) => setState(() => _location = point),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Security will see your name and phone number with this report.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 16),
+                SubmitButton(
+                  label: 'Send report',
+                  busy: _submitting,
+                  onPressed: _submit,
+                ),
+              ],
+            ),
           ),
         ),
       ),

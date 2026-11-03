@@ -99,66 +99,71 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Text(text, style: textTheme.titleMedium),
     );
 
+    // A Column, not a ListView: a ListView drops fields scrolled out of
+    // view, and Form.validate() then silently skips them.
     return Form(
       key: _form,
-      child: ListView(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        children: [
-          Text('Settings', style: textTheme.headlineSmall),
-          if (_message != null) ...[
-            const SizedBox(height: 12),
-            FormMessage(_message!, isError: _isError),
-          ],
-          heading('Report categories'),
-          CategoryEditor(
-            categories: _categories,
-            onChanged: (list) => setState(() => _categories = list),
-          ),
-          heading('Security Office emergency number'),
-          SizedBox(
-            width: 320,
-            child: TextFormField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                helperText: 'Shown on the "Call security" buttons.',
-              ),
-              validator: Validators.ghanaPhone,
-            ),
-          ),
-          heading('SOS countdown'),
-          DropdownMenu<int>(
-            initialSelection: _countdown,
-            onSelected: (value) => setState(() => _countdown = value!),
-            helperText: 'Time to cancel after pressing SOS. 0 sends at once.',
-            dropdownMenuEntries: [
-              for (var s = 0; s <= 10; s++)
-                DropdownMenuEntry(value: s, label: '$s seconds'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Settings', style: textTheme.headlineSmall),
+            if (_message != null) ...[
+              const SizedBox(height: 12),
+              FormMessage(_message!, isError: _isError),
             ],
-          ),
-          heading('Campus boundary'),
-          const Text(
-            'One point per line as "latitude, longitude", going round the '
-            'campus. Right-click a spot in Google Maps to copy its '
-            'coordinates. Leave empty for no boundary.',
-          ),
-          _textArea(_boundary, '5.797, -0.126'),
-          heading('Campus zones'),
-          const Text(
-            'One zone per line as "name, latitude, longitude, radius in '
-            'metres". Incidents inside a zone are labelled with its name.',
-          ),
-          _textArea(_zones, 'Hostels, 5.795, -0.124, 150'),
-          const SizedBox(height: 24),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: FilledButton.icon(
-              onPressed: _busy ? null : _save,
-              icon: const Icon(Icons.save),
-              label: Text(_busy ? 'Saving…' : 'Save settings'),
+            heading('Report categories'),
+            CategoryEditor(
+              categories: _categories,
+              onChanged: (list) => setState(() => _categories = list),
             ),
-          ),
-        ],
+            heading('Security Office emergency number'),
+            SizedBox(
+              width: 320,
+              child: TextFormField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  helperText: 'Shown on the "Call security" buttons.',
+                ),
+                validator: Validators.ghanaPhone,
+              ),
+            ),
+            heading('SOS countdown'),
+            DropdownMenu<int>(
+              initialSelection: _countdown,
+              onSelected: (value) => setState(() => _countdown = value!),
+              helperText: 'Time to cancel after pressing SOS. 0 sends at once.',
+              dropdownMenuEntries: [
+                for (var s = 0; s <= 10; s++)
+                  DropdownMenuEntry(value: s, label: '$s seconds'),
+              ],
+            ),
+            heading('Campus boundary'),
+            const Text(
+              'One point per line as "latitude, longitude", going round the '
+              'campus. Right-click a spot in Google Maps to copy its '
+              'coordinates. Leave empty for no boundary.',
+            ),
+            _textArea(_boundary, '5.797, -0.126'),
+            heading('Campus zones'),
+            const Text(
+              'One zone per line as "name, latitude, longitude, radius in '
+              'metres". Incidents inside a zone are labelled with its name.',
+            ),
+            _textArea(_zones, 'Hostels, 5.795, -0.124, 150'),
+            const SizedBox(height: 24),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: _busy ? null : _save,
+                icon: const Icon(Icons.save),
+                label: Text(_busy ? 'Saving…' : 'Save settings'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
