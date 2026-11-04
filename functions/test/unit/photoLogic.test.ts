@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { canUploadPhoto, MAX_PHOTO_BYTES, parsePhotoUpload } from "../../src/photoLogic";
+import { canUploadPhoto, isPhotoPath, MAX_PHOTO_BYTES, parsePhotoUpload, photoUrl } from "../../src/photoLogic";
 import { hasBlobStore } from "../../src/photoStore";
 
 describe("hasBlobStore", () => {
@@ -21,6 +21,29 @@ const upload = (over: Record<string, unknown> = {}) => ({
   fileName: "photo_1.jpg",
   dataBase64: jpeg.toString("base64"),
   ...over,
+});
+
+describe("isPhotoPath", () => {
+  it("accepts stored report and chat photos, with their random suffix", () => {
+    assert.equal(isPhotoPath("incidents/abc123/photo_1-Xy9kQ2mN.jpg"), true);
+    assert.equal(isPhotoPath("incidents/abc123/chat_m1-x-Xy9kQ2mN.jpg"), true);
+  });
+
+  it("never serves backups or paths that leave the folder", () => {
+    assert.equal(isPhotoPath("backups/2026-11-04.json.gz.enc"), false);
+    assert.equal(isPhotoPath("incidents/../backups/x.jpg"), false);
+    assert.equal(isPhotoPath("incidents/abc123/../../x.jpg"), false);
+    assert.equal(isPhotoPath(""), false);
+  });
+});
+
+describe("photoUrl", () => {
+  it("points at the API with the path escaped", () => {
+    assert.equal(
+      photoUrl("api.example.com", "incidents/a/photo_1-x.jpg"),
+      "https://api.example.com/api/file?path=incidents%2Fa%2Fphoto_1-x.jpg",
+    );
+  });
 });
 
 describe("canUploadPhoto", () => {

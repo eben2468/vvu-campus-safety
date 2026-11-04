@@ -110,7 +110,7 @@ npm run make-admin -- <project-id> cso@vvu.edu.gh "Full Name" +233XXXXXXXXX "tem
 
 1. Push the repo to GitHub and sign up at vercel.com.
 2. **Add New → Project**, import the repo, and set **Root Directory** to `functions`. Pushing to `main` then deploys the API by itself.
-3. In the Vercel dashboard: **Storage → Create Database → Blob**, with access set to **Public**, connected to the project for Production. Photos are shown by URL, and a store's access can't be changed later. This adds `BLOB_STORE_ID`, and the server signs in with Vercel's OIDC token, so no token needs copying.
+3. In the Vercel dashboard: **Storage → Create Database → Blob**, with access set to **Private**, connected to the project for Production. A store's access can't be changed later, and the server reads and writes it as private. This adds `BLOB_STORE_ID`, and the server signs in with Vercel's OIDC token, so no token needs copying.
 4. **Settings → Environment Variables**, for Production:
 
 | Name | Value |

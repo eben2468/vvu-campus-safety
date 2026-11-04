@@ -1,7 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import { put } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
+
+import { photoUrl } from "./photoLogic";
 
 /** Somewhere to keep uploaded files; returns the file's URL. */
 export interface FileStore {
@@ -9,15 +11,23 @@ export interface FileStore {
 }
 
 /**
- * Vercel Blob, used in production. The random suffix makes each URL
- * unguessable, like a Firebase Storage download token, and means a file can
- * never be overwritten. Only people who can read the incident see the URL.
+ * Vercel Blob, used in production. The store is private, so files are read
+ * back through the API (see readStoredFile). The random suffix makes each
+ * URL unguessable, like a Firebase Storage download token, and means a file
+ * can never be overwritten. Only people who can read the incident see the URL.
  */
 class BlobStore implements FileStore {
   async save(path: string, bytes: Buffer, contentType: string): Promise<string> {
-    const blob = await put(path, bytes, { access: "public", addRandomSuffix: true, contentType });
-    return blob.url;
+    const blob = await put(path, bytes, { access: "private", addRandomSuffix: true, contentType });
+    return photoUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "", blob.pathname);
   }
+}
+
+/** A file saved by BlobStore, or null if there isn't one at [path]. */
+export async function readStoredFile(path: string): Promise<Buffer | null> {
+  const result = await get(path, { access: "private" });
+  if (result?.statusCode !== 200) return null;
+  return Buffer.from(await new Response(result.stream).arrayBuffer());
 }
 
 /** A local folder, served by scripts/devServer.ts during development. */

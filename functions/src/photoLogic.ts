@@ -21,6 +21,16 @@ export function isJpeg(bytes: Buffer): boolean {
   return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
 }
 
+/** True for a stored photo's path; anything else in the store, such as backups, is never served. */
+export function isPhotoPath(path: string): boolean {
+  return /^incidents\/[\w-]{1,128}\/[\w-]{1,200}\.jpg$/.test(path);
+}
+
+/** The API address that serves a stored photo. */
+export function photoUrl(host: string, path: string): string {
+  return `https://${host}/api/file?path=${encodeURIComponent(path)}`;
+}
+
 /** Validates an upload. Photos only (no video in the MVP), under 2 MB. */
 export function parsePhotoUpload(data: unknown): ParsedPhoto {
   const { incidentId, fileName, dataBase64 } = (data ?? {}) as Record<string, unknown>;

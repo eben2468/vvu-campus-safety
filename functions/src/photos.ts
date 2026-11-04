@@ -1,7 +1,12 @@
 import { ApiError } from "./api/errors";
 import { ApiRequest, requireCaller } from "./api/request";
-import { canUploadPhoto, parsePhotoUpload } from "./photoLogic";
-import { getFileStore } from "./photoStore";
+import { canUploadPhoto, isPhotoPath, parsePhotoUpload } from "./photoLogic";
+import { getFileStore, readStoredFile } from "./photoStore";
+
+/** The stored photo at [path]; null if there isn't one or it isn't a photo. */
+export async function readPhoto(path: string | null): Promise<Buffer | null> {
+  return path !== null && isPhotoPath(path) ? readStoredFile(path) : null;
+}
 
 /**
  * Stores an incident or chat photo and returns its URL, which the app then
