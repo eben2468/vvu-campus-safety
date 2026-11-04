@@ -6,6 +6,7 @@ import { notifyAnnouncement, notifyMessage } from "../chat";
 import { initFirebase } from "../firebase";
 import { sweepIncidents, syncIncidentRoute } from "../incidents";
 import { uploadPhoto } from "../photos";
+import { hasBlobStore } from "../photoStore";
 import { verifyId } from "../verifyId";
 import { ApiError } from "./errors";
 import { ApiRequest, Caller } from "./request";
@@ -71,12 +72,38 @@ async function callerFrom(authorization?: string): Promise<Caller | null> {
       verified: decoded.verified === true,
       email: decoded.email,
     };
-  } catch {
-    throw new ApiError("unauthenticated", "Your session has expired. Sign in again.");
+  } catch (error) {
+    const code = (error as { code?: string }).code ?? "unknown";
+    if (code === "auth/id-token-expired") {
+      throw new ApiError("unauthenticated", "Your session has expired. Sign in again.");
+    }
+    console.error("Could not verify an ID token", code, error);
+    throw new ApiError("unauthenticated", `The server could not verify your sign-in (${code}).`);
   }
 }
 
+function projectIdIn(serviceAccount: string): string {
+  try {
+    return (JSON.parse(serviceAccount) as { project_id?: string }).project_id ?? "(no project_id)";
+  } catch {
+    return "(not valid JSON)";
+  }
+}
+
+/** Which Firebase project and stores the server is set up for. No secrets. */
+function health() {
+  const key = process.env.FIREBASE_SERVICE_ACCOUNT;
+  return {
+    serviceAccountSet: Boolean(key),
+    projectId: key ? projectIdIn(key) : null,
+    blobConnected: hasBlobStore(),
+    cronSecretSet: Boolean(process.env.CRON_SECRET),
+    backupKeySet: Boolean(process.env.BACKUP_KEY),
+  };
+}
+
 async function dispatch(input: HttpInput): Promise<unknown> {
+  if (input.route === "health") return health();
   const cron = cronRoutes[input.route];
   if (cron) {
     const secret = process.env.CRON_SECRET;
