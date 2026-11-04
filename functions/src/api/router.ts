@@ -95,8 +95,8 @@ async function dispatch(input: HttpInput): Promise<unknown> {
 /** Runs one API call. Shared by Vercel (api/index.ts) and the dev server. */
 export async function handleApi(input: HttpInput): Promise<HttpOutput> {
   if (input.method === "OPTIONS") return { status: 204, headers: CORS_HEADERS, body: null };
-  initFirebase();
   try {
+    initFirebase();
     return { status: 200, headers: CORS_HEADERS, body: { result: (await dispatch(input)) ?? null } };
   } catch (error) {
     if (error instanceof ApiError) {
