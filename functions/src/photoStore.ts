@@ -34,6 +34,15 @@ export function localUploadsDir(): string {
   return join(process.cwd(), ".local-uploads");
 }
 
+/**
+ * True on Vercel once a Blob store is connected. Connected stores get
+ * BLOB_STORE_ID and sign in with Vercel's OIDC token; older ones have a
+ * read-write token. @vercel/blob handles either by itself.
+ */
+export function hasBlobStore(env: NodeJS.ProcessEnv = process.env): boolean {
+  return Boolean(env.BLOB_STORE_ID || env.BLOB_READ_WRITE_TOKEN);
+}
+
 export function getFileStore(): FileStore {
-  return process.env.BLOB_READ_WRITE_TOKEN ? new BlobStore() : new LocalStore();
+  return hasBlobStore() ? new BlobStore() : new LocalStore();
 }

@@ -292,4 +292,4 @@ functions/                  # the server, deployed to Vercel
 
 - `dev`: Firebase Emulator Suite (auth 9099, firestore 8080, UI 4000) plus the local API (`npm run api:dev`, port 3000). App connects to both when `--dart-define=USE_EMULATOR=true`.
 - `prod`: one Firebase project on the free Spark plan, plus one Vercel project (root directory `functions`). App built with `--dart-define=API_URL=https://<project>.vercel.app/api`.
-- Secrets, all as Vercel environment variables: `FIREBASE_SERVICE_ACCOUNT`, `CRON_SECRET`, `BACKUP_KEY`, `BLOB_READ_WRITE_TOKEN`, and later the SMS key. Maps need no key: OpenStreetMap tiles via `flutter_map` (DECISIONS D50).
+- Secrets, all as Vercel environment variables: `FIREBASE_SERVICE_ACCOUNT`, `CRON_SECRET`, `BACKUP_KEY`, `BLOB_STORE_ID` (added by Vercel), and later the SMS key. Maps need no key: OpenStreetMap tiles via `flutter_map` (DECISIONS D50).

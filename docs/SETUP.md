@@ -109,7 +109,7 @@ npm run make-admin -- <project-id> cso@vvu.edu.gh "Full Name" +233XXXXXXXXX "tem
 
 1. Sign up at vercel.com, then `vercel login`.
 2. In `functions/`, run `vercel link` to create the project.
-3. In the Vercel dashboard: **Storage → Create → Blob**, connected to the project. This adds `BLOB_READ_WRITE_TOKEN`.
+3. In the Vercel dashboard: **Storage → Create Database → Blob**, connected to the project. This adds `BLOB_STORE_ID`, and the server signs in with Vercel's OIDC token, so no token needs copying.
 4. **Settings → Environment Variables**, for Production:
 
 | Name | Value |

@@ -2,6 +2,18 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { canUploadPhoto, MAX_PHOTO_BYTES, parsePhotoUpload } from "../../src/photoLogic";
+import { hasBlobStore } from "../../src/photoStore";
+
+describe("hasBlobStore", () => {
+  it("is true for a connected store and for a read-write token", () => {
+    assert.equal(hasBlobStore({ BLOB_STORE_ID: "store_1" }), true);
+    assert.equal(hasBlobStore({ BLOB_READ_WRITE_TOKEN: "token" }), true);
+  });
+
+  it("is false locally, so development uses the local folder", () => {
+    assert.equal(hasBlobStore({}), false);
+  });
+});
 
 const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(100)]);
 const upload = (over: Record<string, unknown> = {}) => ({
