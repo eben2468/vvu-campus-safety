@@ -57,7 +57,7 @@ class MessagingService {
     try {
       await _local.initialize(
         settings: const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          android: AndroidInitializationSettings('@drawable/ic_notification'),
         ),
         onDidReceiveNotificationResponse: (response) {
           final payload = response.payload;

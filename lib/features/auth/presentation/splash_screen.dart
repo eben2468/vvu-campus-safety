@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/env.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/app_logo.dart';
 
 /// Shown while the app works out who is signed in. The router then
 /// redirects to login or the user's home screen.
@@ -22,7 +23,7 @@ class SplashScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.shield, size: 96, color: AppColors.vvuGold),
+                const AppLogo(size: 96),
                 const SizedBox(height: 16),
                 Text(
                   'VVU Campus Safety',

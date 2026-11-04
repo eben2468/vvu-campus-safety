@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app icon's shield and alert mark as one colour: Android draws status
+     bar icons as a white silhouette, so the mark is cut out of the shield. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M256,40 L436,106 V244 C436,356 362,432 256,476 C150,432 76,356 76,244 V106 Z M226,140 A30,30 0 0 1 286,140 V270 A30,30 0 0 1 226,270 Z M256,328 A34,34 0 1 1 256,396 A34,34 0 1 1 256,328 Z" />
+</vector>

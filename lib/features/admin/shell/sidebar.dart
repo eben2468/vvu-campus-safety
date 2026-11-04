@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../auth/providers.dart';
 import '../widgets/status_views.dart';
 import 'destinations.dart';
@@ -63,20 +64,11 @@ class _Brand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logo = Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: AppColors.vvuGold,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(Icons.shield, color: AppColors.navy, size: 24),
-    );
     return Padding(
       padding: EdgeInsets.fromLTRB(compact ? 18 : 20, 22, 16, 18),
       child: Row(
         children: [
-          logo,
+          const AppLogo(size: 40),
           if (!compact) ...[
             const SizedBox(width: 12),
             const Expanded(

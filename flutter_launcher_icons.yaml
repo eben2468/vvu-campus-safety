@@ -1,0 +1,14 @@
+# App icons, from the artwork in assets/icon (DECISIONS D56). After changing it:
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/icon/app_icon.png
+  min_sdk_android: 23
+  adaptive_icon_background: "#C62828"
+  adaptive_icon_foreground: assets/icon/app_icon_foreground.png
+  web:
+    generate: true
+    image_path: assets/icon/app_icon.png
+    background_color: "#003A70"
+    theme_color: "#003A70"

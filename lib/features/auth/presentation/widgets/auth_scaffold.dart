@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme.dart';
+import '../../../../core/widgets/app_logo.dart';
 
 /// Shared layout for the signed-out screens: logo, title, and a scrollable
 /// column limited to a phone-sized width (so it also looks right on web).
@@ -29,7 +29,7 @@ class AuthScaffold extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.shield, size: 64, color: AppColors.vvuBlue),
+                  const Center(child: AppLogo(size: 64)),
                   const SizedBox(height: 12),
                   Text(
                     title,
