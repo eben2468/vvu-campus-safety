@@ -33,6 +33,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- register() fails without this; pushes address installation IDs (D23). -->
+        <meta-data
+            android:name="firebase_messaging_installation_id_enabled"
+            android:value="true" />
         <!-- Pushes without a channel use the SOS alert channel. -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

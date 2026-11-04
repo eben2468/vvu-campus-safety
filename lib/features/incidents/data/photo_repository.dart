@@ -44,9 +44,12 @@ class PhotoRepository {
             bytes: bytes,
           ),
       ]);
-    } on ApiException {
-      throw const AppException(
-        "Couldn't upload your photos. Check your connection and try again.",
+    } on ApiException catch (e) {
+      throw AppException(
+        e.isOffline
+            ? "Couldn't upload your photos. Check your connection and try again."
+            : "The server couldn't save your photos. Try again, or send the "
+                  'report without them.',
       );
     }
   }

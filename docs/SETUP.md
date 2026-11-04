@@ -53,6 +53,7 @@ Nothing to set up. The in-app maps use OpenStreetMap tiles through `flutter_map`
 
 - `minSdkVersion` 23 or higher (Firebase requirement) in `android/app/build.gradle`.
 - Permissions in `AndroidManifest.xml`: `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `POST_NOTIFICATIONS`, `CAMERA`, `CALL_PHONE` (optional — or use the dialer intent without it).
+- Keep the `firebase_messaging_installation_id_enabled` meta-data in `AndroidManifest.xml`: without it `register()` fails with "API disabled" and the device gets no pushes.
 - Create notification channels `sos_alarm` and `sos_alerts` (max importance) at app start. The alarm is `res/raw/sos_alarm.wav`, made by `dart run tool/make_alarm_sound.dart`; `res/raw/keep.xml` stops the release build removing it. Android fixes a channel's sound when it is created, so a new sound needs a new channel id.
 
 ## 6. Run locally with emulators
@@ -109,7 +110,7 @@ npm run make-admin -- <project-id> cso@vvu.edu.gh "Full Name" +233XXXXXXXXX "tem
 
 1. Push the repo to GitHub and sign up at vercel.com.
 2. **Add New → Project**, import the repo, and set **Root Directory** to `functions`. Pushing to `main` then deploys the API by itself.
-3. In the Vercel dashboard: **Storage → Create Database → Blob**, connected to the project for Production. This adds `BLOB_STORE_ID`, and the server signs in with Vercel's OIDC token, so no token needs copying.
+3. In the Vercel dashboard: **Storage → Create Database → Blob**, with access set to **Public**, connected to the project for Production. Photos are shown by URL, and a store's access can't be changed later. This adds `BLOB_STORE_ID`, and the server signs in with Vercel's OIDC token, so no token needs copying.
 4. **Settings → Environment Variables**, for Production:
 
 | Name | Value |

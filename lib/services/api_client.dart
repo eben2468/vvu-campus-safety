@@ -17,6 +17,9 @@ class ApiException implements Exception {
   final String code;
   final String message;
 
+  /// The server was never reached, as opposed to it reporting a problem.
+  bool get isOffline => code == 'unavailable';
+
   @override
   String toString() => 'ApiException($code): $message';
 }

@@ -97,9 +97,11 @@ class ChatRepository {
         fileName: 'chat_$messageId.jpg',
         bytes: bytes,
       );
-    } on ApiException {
-      throw const AppException(
-        "Couldn't send the photo. Check your connection and try again.",
+    } on ApiException catch (e) {
+      throw AppException(
+        e.isOffline
+            ? "Couldn't send the photo. Check your connection and try again."
+            : "The server couldn't save the photo. Try again later.",
       );
     }
   }
