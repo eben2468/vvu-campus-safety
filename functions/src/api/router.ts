@@ -96,7 +96,6 @@ function health() {
   return {
     vercelEnvironment: process.env.VERCEL_ENV ?? null,
     vercelUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL ?? null,
-    variableNames: Object.keys(process.env).sort(),
     serviceAccountSet: Boolean(key),
     projectId: key ? projectIdIn(key) : null,
     blobConnected: hasBlobStore(),
