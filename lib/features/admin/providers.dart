@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/app_user.dart';
 import '../../models/audit_log_entry.dart';
 import '../../models/incident.dart';
+import '../../models/roster_entry.dart';
 import '../../services/api_client.dart';
 import '../../services/firestore_service.dart';
 import '../officer/providers.dart';
@@ -78,6 +79,10 @@ class UserGroupNotifier extends Notifier<UserGroup> {
 final usersProvider = StreamProvider<List<AppUser>>((ref) {
   final group = ref.watch(userGroupProvider);
   return ref.watch(adminRepositoryProvider).watchUsers(group);
+});
+
+final rosterProvider = StreamProvider<List<RosterEntry>>((ref) {
+  return ref.watch(adminRepositoryProvider).watchRoster();
 });
 
 /// The analytics page's date range (whole Accra days, [to] inclusive) and

@@ -8,7 +8,7 @@ import '../features/admin/announcements/presentation/admin_announcements_screen.
 import '../features/admin/audit/presentation/audit_log_screen.dart';
 import '../features/admin/incidents/presentation/incidents_screen.dart';
 import '../features/admin/live_board/presentation/live_board_screen.dart';
-import '../features/admin/roster/presentation/roster_import_screen.dart';
+import '../features/admin/roster/presentation/roster_screen.dart';
 import '../features/admin/settings/presentation/settings_screen.dart';
 import '../features/admin/shell/admin_shell.dart';
 import '../features/admin/users/presentation/users_screen.dart';
@@ -101,7 +101,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           _dashboardPage(Routes.dashboard, const LiveBoardScreen()),
           _dashboardPage(Routes.dashboardIncidents, const IncidentsScreen()),
           _dashboardPage(Routes.dashboardUsers, const UsersScreen()),
-          _dashboardPage(Routes.dashboardRoster, const RosterImportScreen()),
+          _dashboardPage(Routes.dashboardRoster, const RosterScreen()),
           _dashboardPage(
             Routes.dashboardAnnouncements,
             const AdminAnnouncementsScreen(),

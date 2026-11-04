@@ -39,6 +39,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(tester.takeException(), isNull);
     }
+    await tester.tap(find.text('Import a file'));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Download sample CSV'), findsOneWidget);
   });
 
@@ -50,5 +52,35 @@ void main() {
     await pumpDashboard(tester, Routes.dashboardIncidents);
     expect(find.text('Efia Owusu'), findsWidgets);
     expect(find.text('SOS'), findsWidgets);
+  });
+
+  testWidgets('the roster lists imported IDs', (tester) async {
+    await pumpDashboard(tester, Routes.dashboardRoster);
+    expect(find.text('Imported IDs (62)'), findsOneWidget);
+    expect(find.text('223IT0100001'), findsOneWidget);
+    expect(find.text('Registered'), findsOneWidget);
+    expect(find.text('1–50 of 62'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Next page'));
+    await tester.pump();
+    expect(find.text('51–62 of 62'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, '224ba');
+    await tester.pump();
+    expect(find.text('Kofi Asante'), findsOneWidget);
+    expect(find.text('1–1 of 1'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'nobody');
+    await tester.pump();
+    expect(find.text('No IDs match'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the users page links to the roster', (tester) async {
+    await pumpDashboard(tester, Routes.dashboardUsers);
+    await tester.tap(find.text('View ID roster'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Imported IDs (62)'), findsOneWidget);
   });
 }

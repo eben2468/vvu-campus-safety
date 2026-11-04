@@ -29,7 +29,8 @@ service cloud.firestore {
         && (!changed.hasAny(['onDuty']) || request.resource.data.onDuty is bool);
     }
 
-    // Clients never read the roster; `verifyId` does, via the Admin SDK.
+    // Only admins read it, on the dashboard's ID roster page. `verifyId`
+    // uses the Admin SDK.
     match /idRoster/{idNumber} {
       allow read, write: if isAdmin();
     }

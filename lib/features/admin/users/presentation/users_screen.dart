@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../models/app_user.dart';
+import '../../../../routing/routes.dart';
 import '../../../auth/providers.dart';
 import '../../data/admin_repository.dart';
 import '../../providers.dart';
@@ -58,9 +60,14 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
           PageHeader(
             title: 'Users',
             subtitle:
-                'Find anyone with an account, add security staff and '
-                'manage roles.',
+                'People appear here once they register. Imported IDs are '
+                'listed under ID roster.',
             actions: [
+              OutlinedButton.icon(
+                onPressed: () => context.go(Routes.dashboardRoster),
+                icon: const Icon(Icons.badge_outlined),
+                label: const Text('View ID roster'),
+              ),
               FilledButton.icon(
                 onPressed: _create,
                 icon: const Icon(Icons.person_add_alt_1),

@@ -73,7 +73,7 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 - [x] Live board: campus map + active incident list, new-SOS sound/flash, summary cards
 - [x] Incidents page: filterable table + detail drawer with all actions
 - [x] Users page: search, create officer/admin (`adminCreateUser`), change role / deactivate (`adminSetRole`)
-- [x] Roster CSV import (`adminImportRoster`)
+- [x] Roster CSV import (`adminImportRoster`) and a list of imported IDs
 - [x] Announcements composer
 - [ ] Deploy dashboard to Firebase Hosting — waiting on the real Firebase project (`flutterfire configure`, free Spark plan, D52); `firebase.json` hosting serves `build/web`
 

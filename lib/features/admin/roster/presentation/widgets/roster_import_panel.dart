@@ -4,26 +4,25 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/errors/app_exception.dart';
-import '../../../auth/presentation/widgets/auth_scaffold.dart';
-import '../../data/admin_repository.dart';
-import '../../data/roster_csv.dart';
-import '../../providers.dart';
-import '../../widgets/page_header.dart';
-import 'widgets/roster_guide.dart';
-import 'widgets/roster_preview.dart';
-import 'widgets/roster_upload.dart';
+import '../../../../../core/errors/app_exception.dart';
+import '../../../../auth/presentation/widgets/auth_scaffold.dart';
+import '../../../data/admin_repository.dart';
+import '../../../data/roster_csv.dart';
+import '../../../providers.dart';
+import '../../../widgets/page_header.dart';
+import 'roster_guide.dart';
+import 'roster_preview.dart';
+import 'roster_upload.dart';
 
-/// Imports the Registry's list of student and staff IDs (PRD §4.11), which
-/// `verifyId` checks when someone registers.
-class RosterImportScreen extends ConsumerStatefulWidget {
-  const RosterImportScreen({super.key});
+/// Chooses a roster CSV, previews it and imports it.
+class RosterImportPanel extends ConsumerStatefulWidget {
+  const RosterImportPanel({super.key});
 
   @override
-  ConsumerState<RosterImportScreen> createState() => _RosterImportScreenState();
+  ConsumerState<RosterImportPanel> createState() => _RosterImportPanelState();
 }
 
-class _RosterImportScreenState extends ConsumerState<RosterImportScreen> {
+class _RosterImportPanelState extends ConsumerState<RosterImportPanel> {
   String? _fileName;
   RosterCsv? _parsed;
   RosterImportResult? _result;
@@ -78,14 +77,7 @@ class _RosterImportScreenState extends ConsumerState<RosterImportScreen> {
     );
 
     return ListView(
-      padding: kPagePadding,
       children: [
-        const PageHeader(
-          title: 'ID roster',
-          subtitle:
-              'Students and staff can only register with an ID on this '
-              'list.',
-        ),
         if (_error != null) FormMessage(_error!),
         LayoutBuilder(
           builder: (context, constraints) {

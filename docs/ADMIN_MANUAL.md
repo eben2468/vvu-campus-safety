@@ -94,6 +94,15 @@ You can't change your own role or deactivate yourself; ask another admin.
 
 Students and staff can only register with an ID on the roster.
 
+The **Imported IDs** tab lists every ID on the roster, with its type,
+department and status: **Not registered**, **Registered** or **Blocked**.
+Search by ID, name or department, or filter by status. The list updates by
+itself as people register. It shows the first 2,000 IDs; every imported ID
+can still register. People appear under **Users** only once they have
+registered.
+
+To add IDs, open the **Import a file** tab:
+
 1. Click **Download sample CSV** and open the file in Excel or Google
    Sheets. It has the right columns and six example rows.
 2. Replace the example rows with the list from the Registry (students) or

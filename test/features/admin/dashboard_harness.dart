@@ -15,7 +15,7 @@ import 'package:vvu_campus_safety/features/admin/data/dashboard_repository.dart'
 import 'package:vvu_campus_safety/features/admin/incidents/presentation/incidents_screen.dart';
 import 'package:vvu_campus_safety/features/admin/live_board/presentation/live_board_screen.dart';
 import 'package:vvu_campus_safety/features/admin/providers.dart';
-import 'package:vvu_campus_safety/features/admin/roster/presentation/roster_import_screen.dart';
+import 'package:vvu_campus_safety/features/admin/roster/presentation/roster_screen.dart';
 import 'package:vvu_campus_safety/features/admin/settings/presentation/settings_screen.dart';
 import 'package:vvu_campus_safety/features/admin/shell/admin_shell.dart';
 import 'package:vvu_campus_safety/features/admin/users/presentation/users_screen.dart';
@@ -31,6 +31,7 @@ import 'package:vvu_campus_safety/models/audit_log_entry.dart';
 import 'package:vvu_campus_safety/models/incident.dart';
 import 'package:vvu_campus_safety/models/incident_event.dart';
 import 'package:vvu_campus_safety/models/incident_status.dart';
+import 'package:vvu_campus_safety/models/roster_entry.dart';
 import 'package:vvu_campus_safety/routing/routes.dart';
 
 /// Every dashboard page, by route.
@@ -39,7 +40,7 @@ final dashboardPages = <String, Widget>{
   Routes.dashboardIncidents: const IncidentsScreen(),
   Routes.dashboardAnalytics: const AnalyticsScreen(),
   Routes.dashboardUsers: const UsersScreen(),
-  Routes.dashboardRoster: const RosterImportScreen(),
+  Routes.dashboardRoster: const RosterScreen(),
   Routes.dashboardAnnouncements: const AdminAnnouncementsScreen(),
   Routes.dashboardSettings: const SettingsScreen(),
   Routes.dashboardAuditLog: const AuditLogScreen(),
@@ -95,6 +96,30 @@ final sampleUsers = [
     role: UserRole.student,
     deactivated: true,
   ),
+];
+
+final sampleRoster = [
+  const RosterEntry(
+    idNumber: '223IT0100001',
+    fullName: 'Kwame Mensah',
+    type: 'student',
+    department: 'Information Technology',
+    claimedBy: 'student-1',
+  ),
+  const RosterEntry(
+    idNumber: '224BA0300042',
+    fullName: 'Kofi Asante',
+    type: 'student',
+    active: false,
+  ),
+  for (var i = 0; i < 60; i++)
+    RosterEntry(
+      idNumber: 'STF${i.toString().padLeft(4, '0')}',
+      fullName: 'Staff Member $i',
+      type: 'staff',
+      department: 'Registry',
+      importedAt: _now,
+    ),
 ];
 
 final sampleIncidents = [
@@ -264,6 +289,10 @@ class FakeAdminRepository extends Fake implements AdminRepository {
         ? const []
         : sampleUsers.where((u) => group.roles.contains(u.role)).toList(),
   );
+
+  @override
+  Stream<List<RosterEntry>> watchRoster() =>
+      Stream.value(empty ? const [] : sampleRoster);
 }
 
 /// Wraps the whole app, so a test can capture it as an image.

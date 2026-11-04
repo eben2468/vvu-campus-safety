@@ -5,6 +5,7 @@ import '../../../core/constants.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../models/app_settings.dart';
 import '../../../models/app_user.dart';
+import '../../../models/roster_entry.dart';
 import '../../../services/api_client.dart';
 import 'roster_csv.dart';
 
@@ -72,6 +73,29 @@ class AdminRepository {
       );
       return users;
     });
+  }
+
+  /// Most roster entries the roster page loads. Each one opened costs a
+  /// Firestore read, and the free plan allows 50,000 a day.
+  static const rosterViewLimit = 2000;
+
+  /// Imported IDs, sorted by name. Updates live as people register.
+  Stream<List<RosterEntry>> watchRoster() {
+    return _firestore
+        .collection(Collections.idRoster)
+        .limit(rosterViewLimit)
+        .snapshots()
+        .map((snap) {
+          final entries = [
+            for (final doc in snap.docs)
+              RosterEntry.fromMap(doc.id, doc.data()),
+          ];
+          entries.sort(
+            (a, b) =>
+                a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase()),
+          );
+          return entries;
+        });
   }
 
   /// Creates an officer or admin account with a temporary password.
