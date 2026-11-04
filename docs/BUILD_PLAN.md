@@ -75,7 +75,7 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 - [x] Users page: search, create officer/admin (`adminCreateUser`), change role / deactivate (`adminSetRole`)
 - [x] Roster CSV import (`adminImportRoster`)
 - [x] Announcements composer
-- [ ] Deploy dashboard to Firebase Hosting — waiting on the real Firebase project (`flutterfire configure`, Blaze plan); `firebase.json` hosting serves `build/web`
+- [ ] Deploy dashboard to Firebase Hosting — waiting on the real Firebase project (`flutterfire configure`, free Spark plan, D52); `firebase.json` hosting serves `build/web`
 
 **Demo:** CSO watches the live board while a test SOS comes in and is resolved.
 
@@ -99,7 +99,7 @@ Tip for Claude Code: start a session with *"Read CLAUDE.md and docs/BUILD_PLAN.m
 - [x] Rules tests passing for all collections
 - [ ] Alpha test with classmates; beta with security officers — record SOS latency and task times for Chapter 6 (protocol and record sheets: `docs/TESTING.md`)
 - [ ] Fix issues; accessibility pass (font scaling, contrast) — accessibility pass done (D49); fix what alpha/beta finds
-- [ ] Build release APK; deploy rules, functions, hosting — needs the real Firebase project and Android SDK (M0)
+- [ ] Build release APK; deploy rules, API (Vercel), hosting — needs the real Firebase project and a Vercel account (SETUP §8, D52)
 - [x] Write user manual (student/officer) and admin manual for Chapter 7 — `docs/USER_MANUAL.md`, `docs/ADMIN_MANUAL.md`
 - [ ] Screenshots of every screen for the thesis
 

@@ -142,8 +142,8 @@ when. The 200 most recent are shown. Nobody can edit or delete entries.
 
 ## 9. Backups and privacy
 
-- The database is backed up automatically every night at 02:00. To
-  restore one, ask the system administrator (SETUP.md §8).
+- The database is backed up automatically every night at 02:00, encrypted.
+  To restore one, ask the system administrator (SETUP.md §8).
 - Students' emergency contacts are private: not even admins can see them
   in the dashboard.
 - Incidents are never deleted, so the record is complete for

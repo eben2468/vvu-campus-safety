@@ -7,23 +7,28 @@
  │ Flutter mobile app     │        │ Flutter web admin dashboard│
  │ student/staff/officer  │        │ admin (CSO, supervisors)   │
  └──────────┬─────────────┘        └─────────────┬──────────────┘
-            │  Firebase SDKs (Auth, Firestore, Storage, FCM, callable Functions)
-            ▼                                    ▼
- ┌──────────────────────────────────────────────────────────────┐
- │ Firebase                                                      │
- │  Auth (custom claims: role)   Firestore   Storage   FCM       │
- │  Cloud Functions (TypeScript, v2)   Hosting (admin web)       │
- └──────────────────────────────────────────────────────────────┘
-            │
-            ▼
-   SMS gateway (Ghana provider, behind SmsProvider interface)
+            │  Firebase SDKs (Auth, Firestore, FCM)        │
+            │  + HTTPS API calls with the user's ID token  │
+            ▼                                              ▼
+ ┌────────────────────────────┐        ┌───────────────────────────────┐
+ │ Firebase (free Spark plan) │◄───────│ API on Vercel (functions/)    │
+ │  Auth (claims: role)       │ Admin  │  privileged work: ID checks,  │
+ │  Firestore                 │  SDK   │  roles, pushes, SMS, audit    │
+ │  Cloud Messaging           │        │  Vercel Blob: photos, backups │
+ │  Hosting (admin web)       │        └───────────▲───────────┬───────┘
+ └────────────────────────────┘                    │           │
+                                 every minute: sweep           ▼
+                                 (cron-job.org)    SMS gateway (behind
+                                                   SmsProvider interface)
 ```
+
+Firebase's free plan has no Cloud Functions or Storage, so those jobs run on Vercel's free plan instead (DECISIONS D52).
 
 One Flutter codebase builds both targets. `kIsWeb` + the user's role decide which shell/router branch loads: web → admin routes only; mobile → student/staff or officer routes.
 
 ## 2. Roles and claims
 
-- Custom claim `role` ∈ `student | staff | officer | admin`, set only by Cloud Functions.
+- Custom claim `role` ∈ `student | staff | officer | admin`, set only by the server API.
 - Custom claim `verified: true` set after ID verification.
 - App reads claims via `user.getIdTokenResult(true)` after sign-in and after role changes.
 - `users/{uid}.role` mirrors the claim for display/search only — rules never trust it.
@@ -60,7 +65,7 @@ Admin-only read/write (via dashboard import). Clients never read it directly —
 | deactivated | bool | |
 | createdAt | timestamp | |
 
-Subcollection `users/{uid}/contacts/{contactId}`: `name`, `phone` (+233…), `relationship`, `createdAt`. Owner-only in rules. Max 5: enforced in the app; `onIncidentCreated` texts at most 5.
+Subcollection `users/{uid}/contacts/{contactId}`: `name`, `phone` (+233…), `relationship`, `createdAt`. Owner-only in rules. Max 5: enforced in the app; `syncIncident` texts at most 5.
 
 ### `incidents/{incidentId}`
 | Field | Type | Notes |
@@ -81,13 +86,14 @@ Subcollection `users/{uid}/contacts/{contactId}`: `name`, `phone` (+233…), `re
 | createdAt | timestamp | |
 | acknowledgedAt | timestamp? | first accept |
 | resolvedAt | timestamp? | resolved or false_alarm |
-| responseSeconds | number? | `acknowledgedAt − createdAt`, set by function |
+| responseSeconds | number? | `acknowledgedAt − createdAt`, set by the server |
 | active | bool | true until resolved/false_alarm (simplifies queries) |
+| handledStatus | string? | last status the server finished handling; server-only (§5) |
 
 Subcollections:
 - `locations/{autoId}`: `point` (geopoint), `accuracy` (number, m), `timestamp`. Written by reporter device during active SOS only.
-- `events/{autoId}`: `type` (`created|alerted|accepted|assigned|on_scene|note|resolved|false_alarm|cancelled`), `actorId`, `actorName`, `text`, `timestamp`. `created` and `alerted` are written by `onIncidentCreated` (`actorId: system` for alerted); clients write only their own actions.
-- `messages/{autoId}`: `senderId`, `senderName`, `senderRole`, `text`, `imageUrl?`, `timestamp`. Chat photos are stored at `incidents/{id}/chat_{messageId}.jpg` (D35).
+- `events/{autoId}`: `type` (`created|alerted|accepted|assigned|on_scene|note|resolved|false_alarm|cancelled`), `actorId`, `actorName`, `text`, `timestamp`. `created` and `alerted` are written by `syncIncident` (`actorId: system` for alerted); clients write only their own actions.
+- `messages/{autoId}`: `senderId`, `senderName`, `senderRole`, `text`, `imageUrl?`, `timestamp`, `pushedAt?` (server-only). Chat photos are stored at `incidents/{id}/chat_{messageId}.jpg` (D35).
 
 ### `announcements/{id}`
 `title`, `body`, `audience` (`all|students|staff|officers`), `createdBy`, `createdAt`.
@@ -106,7 +112,7 @@ Default categories: `Theft`, `Assault`, `Harassment`, `Medical`, `Fire`, `Accide
 - `incidents`: `category ASC, createdAt DESC`
 - `incidents`: `assignedTo ARRAY_CONTAINS, createdAt DESC`
 - `announcements`: `audience ASC, createdAt DESC` (each user's announcement list)
-- `users`: `role ASC, onDuty ASC` (on-duty officer lookup in `onIncidentCreated`)
+- `users`: `role ASC, onDuty ASC` (on-duty officer lookup in `syncIncident`)
 - `events` (collection group): `timestamp DESC` field override — the live board's activity feed across all incidents (rules: `match /{path=**}/events/{e}` readable by officers/admins)
 
 ## 4. Incident state machine
@@ -120,7 +126,7 @@ new ──(function fan-out)──▶ alerted ──accept──▶ accepted ─
 | From | To | Who |
 | --- | --- | --- |
 | (none) | `new` | reporter creates |
-| `new` | `alerted` | `onIncidentCreated` function |
+| `new` | `alerted` | `syncIncident` (server) |
 | `new`, `alerted` | `cancelled`* | reporter ("I'm safe") within any time before accept |
 | `alerted` | `accepted` | officer/admin |
 | `accepted` | `on_scene` | assigned officer/admin |
@@ -131,22 +137,39 @@ new ──(function fan-out)──▶ alerted ──accept──▶ accepted ─
 
 Every transition: update `status` (+ timestamps), write an `events` doc, notify reporter. Enforce allowed transitions in security rules (simple version) and in a shared Dart `IncidentStatus.canTransition()` helper.
 
-## 5. Cloud Functions (`/functions/src`)
+## 5. Server API (`/functions`)
 
-| Function | Type | Purpose |
+One Vercel function (`functions/api/index.ts`, rewritten from every `/api/*` address by `vercel.json`) runs `handleApi` in `src/api/router.ts`. Keeping the whole API in one function means it stays warm, which keeps SOS alerts fast. `npm run api:dev` runs the same router on your PC against the emulators.
+
+The app sends `POST /api/<name>` with a JSON body and `Authorization: Bearer <Firebase ID token>`; the router verifies the token. Replies are `{ "result": ... }` or `{ "error": { "code", "message" } }`.
+
+| Call | Who | Purpose |
 | --- | --- | --- |
-| `verifyId` | callable | Check `idRoster`, set claims `role`+`verified`, create `users` doc, mark roster `claimedBy`. Transaction to prevent double claim. |
-| `onIncidentCreated` | Firestore onCreate `incidents/{id}` | Set `status: alerted`, write `events`, send FCM to all `onDuty` officers (high priority, data + notification), SMS emergency contacts if `kind == sos`. |
-| `onIncidentUpdated` | Firestore onUpdate | On status change: compute `responseSeconds`, set `active=false` when closed, increment `falseAlarmCount`, push update to reporter. |
-| `onMessageCreated` | Firestore onCreate `incidents/{id}/messages/{m}` | Push to the other party(ies). |
-| `onAnnouncementCreated` | Firestore onCreate | Push to audience via FCM topics (`all`, `students`, `staff`, `officers`). |
-| `adminCreateUser` | callable (admin) | Create officer/admin account, set claims, audit log. |
-| `adminSetRole` | callable (admin) | Change role / deactivate (also `auth.updateUser({disabled})`), audit log. |
-| `adminImportRoster` | callable (admin) | Accept parsed CSV rows (≤ 5000 per call), batch-write `idRoster`, audit log. |
-| `adminUpdateSettings` | callable (admin) | Validate and save `settings/app` (clients cannot write it), audit log `settings_updated` with the changed fields. |
-| `scheduledBackup` | scheduled (daily 02:00 Africa/Accra) | Firestore export to `gs://<bucket>/backups/YYYY-MM-DD`. |
+| `verifyId` | signed in | Check `idRoster`, set claims `role`+`verified`, create `users` doc, mark roster `claimedBy`. Transaction to prevent double claim. |
+| `syncIncident` | signed in | Bring an incident up to date (below). The app calls it after every incident write. |
+| `notifyMessage` | message sender | Push a chat message to the other party(ies), once. |
+| `notifyAnnouncement` | admin | Push to the audience via FCM topics (`all`, `students`, `staff`, `officers`), once. |
+| `uploadPhoto` | verified member, officer, admin | Store a JPEG under 2 MB in Vercel Blob and return its URL. |
+| `adminCreateUser` | admin | Create officer/admin account, set claims, audit log. |
+| `adminSetRole` | admin | Change role / deactivate (also `auth.updateUser({disabled})`), audit log. |
+| `adminImportRoster` | admin | Accept parsed CSV rows (≤ 5000 per call), batch-write `idRoster`, audit log. |
+| `adminUpdateSettings` | admin | Validate and save `settings/app` (clients cannot write it), audit log `settings_updated` with the changed fields. |
+| `sweep` | `CRON_SECRET` | Every minute (cron-job.org): sync anything the app couldn't report. |
+| `backup` | `CRON_SECRET` | Daily 02:00 UTC (Vercel cron): save an encrypted copy of every document to Blob. |
 
-SMS: `functions/src/sms/SmsProvider.ts` interface `send(to: string, text: string)`; `ConsoleSmsProvider` for dev; real provider added once chosen. API key via `defineSecret`.
+**`syncIncident`.** A Firestore trigger would run by itself after each write; on the free plan the app has to ask instead. `incidents/{id}.handledStatus` (server-only) records the last status the server finished handling, and `syncAction()` compares it with `status`:
+
+- `new` → **alert**: set `status: alerted`, write the `created` and `alerted` events, push to all `onDuty` officers (high priority), SMS emergency contacts if `kind == sos`.
+- `status != handledStatus` → **status change**: compute `responseSeconds`, set `active=false` and `resolvedAt` when closed, increment `falseAlarmCount`, push the update to the reporter.
+- otherwise nothing.
+
+Each step runs in a transaction that also writes `handledStatus`, so repeated or simultaneous calls do the work once.
+
+**Why an SOS can't get lost.** The call is attached to the Firestore write, so an SOS saved offline syncs the moment it reaches the server. If the phone is switched off first, `sweep` finds it within a minute (`active == true` and `status` in `new`, `accepted`, `resolved`, `false_alarm`). Whatever happens, the incident is already on the live board and officers' queues through Firestore; only the push can be delayed. An officer accepting a still-`new` incident syncs it first, because rules only allow accepting from `alerted`.
+
+`pushedAt` on messages and announcements stops a repeated call sending a second notification.
+
+SMS: `functions/src/sms/SmsProvider.ts` interface `send(to: string, text: string)`; `ConsoleSmsProvider` for dev; real provider added once chosen, with its key in a Vercel environment variable.
 
 Topics: on login the app subscribes to `all` + role topic; unsubscribes on logout.
 
@@ -171,7 +194,7 @@ service cloud.firestore {
       allow update: if request.auth.uid == uid
         && !request.resource.data.diff(resource.data).affectedKeys()
              .hasAny(['role', 'verified', 'deactivated', 'falseAlarmCount', 'idNumber']);
-      allow create, delete: if false; // functions only
+      allow create, delete: if false; // server only
       match /contacts/{cid} {
         allow read, write: if request.auth.uid == uid;
       }
@@ -209,7 +232,7 @@ service cloud.firestore {
 }
 ```
 
-Storage (`storage.rules`): `incidents/{incidentId}/{file}` — write if signed in, `contentType.matches('image/.*')`, size < 2 MB; read if officer or the incident's reporter (check via Firestore `get` in rules or store `reporterId` in custom metadata).
+Photos: there are no Storage rules on the free plan. `uploadPhoto` makes the same checks on the server (signed-in verified member or officer, JPEG only, under 2 MB, safe file name). Blob URLs carry a random suffix, so like Firebase download URLs they are unguessable and only reach people who can read the incident. A file can never be overwritten.
 
 Write rules tests with `@firebase/rules-unit-testing` against the emulator.
 
@@ -243,8 +266,8 @@ lib/
     emergency_contact.dart  announcement.dart  app_settings.dart
     incident_status.dart    # enum + canTransition()
   services/
-    auth_service.dart  firestore_service.dart  storage_service.dart
-    location_service.dart  messaging_service.dart  functions_service.dart
+    auth_service.dart  firestore_service.dart  api_client.dart
+    location_service.dart  messaging_service.dart
   routing/
     router.dart             # go_router, redirect on auth/role
     routes.dart
@@ -255,13 +278,18 @@ lib/
     admin/{shell,live_board,incidents,analytics,users,roster,announcements,settings,audit}/...
 test/
   models/  features/  (unit + widget tests)
-functions/
-  src/index.ts  src/verifyId.ts  src/incidents.ts  src/admin.ts  src/backup.ts  src/sms/
+functions/                  # the server, deployed to Vercel
+  api/index.ts              # Vercel entry point
+  vercel.json
+  src/api/router.ts         # every API call
+  src/verifyId.ts  src/incidents.ts  src/chat.ts  src/admin.ts
+  src/photos.ts  src/backup.ts  src/sms/
+  scripts/devServer.ts      # the API on your PC
   test/
 ```
 
 ## 10. Environments
 
-- `dev`: Firebase Emulator Suite (auth 9099, firestore 8080, functions 5001, storage 9199, UI 4000). App connects to emulators when `--dart-define=USE_EMULATOR=true`.
-- `prod`: single Firebase project (e.g. `vvu-campus-safety`) on the Blaze plan.
-- Secrets: the SMS key in Functions secrets. Maps need no key: OpenStreetMap tiles via `flutter_map` (DECISIONS D50).
+- `dev`: Firebase Emulator Suite (auth 9099, firestore 8080, UI 4000) plus the local API (`npm run api:dev`, port 3000). App connects to both when `--dart-define=USE_EMULATOR=true`.
+- `prod`: one Firebase project on the free Spark plan, plus one Vercel project (root directory `functions`). App built with `--dart-define=API_URL=https://<project>.vercel.app/api`.
+- Secrets, all as Vercel environment variables: `FIREBASE_SERVICE_ACCOUNT`, `CRON_SECRET`, `BACKUP_KEY`, `BLOB_READ_WRITE_TOKEN`, and later the SMS key. Maps need no key: OpenStreetMap tiles via `flutter_map` (DECISIONS D50).

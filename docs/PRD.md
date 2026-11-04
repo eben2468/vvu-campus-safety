@@ -1,5 +1,7 @@
 # Product Requirements — VVU Campus Safety App
 
+> **Note:** this document keeps the original wording. Where it says Cloud Functions, triggers or Storage, the system now uses the server API on Vercel and Vercel Blob, so that it can run on Firebase's free plan (DECISIONS D52). The behaviour is the same.
+
 Source: project proposal by Ezekiel Agoe Kumah (223IT0100946), supervisor Gifty Tanoah Peprah, VVU Department of IT, dated 10/06/2026. Section references (e.g. 4.2.2) point to that proposal.
 
 ## 1. Problem

@@ -6,9 +6,10 @@
 | --- | --- | --- |
 | Flutter SDK (stable) | `flutter doctor` | Includes Dart |
 | Android Studio | — | For Android SDK, emulator, platform tools (you'll code in VS Code) |
-| Node.js LTS | `node -v` | For Firebase CLI and Cloud Functions |
+| Node.js LTS | `node -v` | For the Firebase CLI and the server API |
 | Firebase CLI | `firebase --version` | `npm install -g firebase-tools` |
 | FlutterFire CLI | `flutterfire --version` | `dart pub global activate flutterfire_cli` |
+| Vercel CLI | `vercel --version` | `npm install -g vercel`, to deploy the API |
 | Java JDK 17+ | `java -version` | Needed by the Firestore emulator |
 | Git | `git --version` | |
 
@@ -27,28 +28,22 @@ git init && git add . && git commit -m "Initial project + docs"
 
 Then open the folder in VS Code and start Claude Code in it — it picks up `CLAUDE.md` automatically.
 
-## 3. Firebase project
+## 3. Firebase project (free Spark plan, no card)
 
-1. Go to the Firebase console → **Add project** → name it `vvu-campus-safety` (Analytics optional).
-2. **Upgrade to Blaze** (pay-as-you-go) — required for Cloud Functions and scheduled backups. Set a budget alert (e.g. a small monthly amount) in Google Cloud Billing.
+1. Go to the Firebase console → **Add project** → name it `VVU Campus Safety` and note the **project ID**. Google Analytics isn't needed.
+2. **Stay on the Spark plan.** Don't enable Storage or Functions: the API on Vercel does those jobs (DECISIONS D52).
 3. Enable products:
    - Authentication → Email/Password
    - Firestore Database → production mode, location close to Ghana (e.g. `europe-west1`)
-   - Storage
-   - Cloud Messaging (enabled by default)
-   - Hosting
+   - Cloud Messaging and Hosting need no setup
 4. Connect the app:
 
 ```bash
 firebase login
-flutterfire configure --project=vvu-campus-safety --platforms=android,web
-firebase init firestore functions storage hosting emulators
-#   Functions: TypeScript, ESLint yes
-#   Hosting public dir: build/web, single-page app: yes
-#   Emulators: Auth, Functions, Firestore, Storage, Hosting
+flutterfire configure --project=<project-id> --platforms=android,web
 ```
 
-5. Set the Functions region to match Firestore (e.g. `europe-west1`) in `functions/src/index.ts` via `setGlobalOptions({ region: 'europe-west1' })`.
+5. **Project settings → Service accounts → Generate new private key.** Save the JSON file **outside the project folder**: it gives full access and must never be committed. Step 8 puts it in Vercel.
 
 ## 4. Maps
 
@@ -69,8 +64,8 @@ it. So you can run everything locally before steps 3–4 are done. After
 
 ```bash
 firebase emulators:start --import=./emulator-data --export-on-exit
-# in another terminal
-cd functions && npm run build -- --watch
+# in another terminal: the API, on port 3000
+cd functions && npm run api:dev
 # seed sample roster + settings
 cd functions && npm run seed   # sample IDs are listed in functions/scripts/seedRoster.ts
 # optional: 120 past incidents over 12 weeks for the analytics demo
@@ -87,7 +82,7 @@ A physical phone has two options:
 - **USB (no shared Wi-Fi needed):** enable USB debugging, forward the ports, then run with `127.0.0.1`:
 
   ```bash
-  for p in 9099 8080 5001 9199; do adb reverse tcp:$p tcp:$p; done
+  for p in 9099 8080 3000; do adb reverse tcp:$p tcp:$p; done
   flutter run -d <phone-id> --dart-define=USE_EMULATOR=true --dart-define=EMULATOR_HOST=127.0.0.1
   ```
 
@@ -98,41 +93,62 @@ Note: FCM push doesn't fully work in the emulator — test push notifications ag
 
 ## 7. First admin account
 
-Self sign-up never creates admins. Bootstrap one with a one-off script run against the real project:
+Self sign-up never creates admins. Bootstrap one with a one-off script run against the real project, using the key from §3 (it stays on your PC):
 
-```bash
-gcloud auth application-default login   # credentials stay on your PC, not in the repo
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\keys\service-account.json"
 cd functions
-npm run make-admin -- vvu-campus-safety cso@vvu.edu.gh "Full Name" +233XXXXXXXXX "temporary-password"
+npm run make-admin -- <project-id> cso@vvu.edu.gh "Full Name" +233XXXXXXXXX "temporary-password"
 ```
 
 `functions/scripts/makeAdmin.ts` sets custom claims `{ role: 'admin', verified: true }` and creates the `users` doc. If the email already has an account it is promoted and the password is ignored. After that, create officers from the dashboard.
 
 ## 8. Deploy
 
+**The API, on Vercel** (free Hobby plan):
+
+1. Sign up at vercel.com, then `vercel login`.
+2. In `functions/`, run `vercel link` to create the project.
+3. In the Vercel dashboard: **Storage → Create → Blob**, connected to the project. This adds `BLOB_READ_WRITE_TOKEN`.
+4. **Settings → Environment Variables**, for Production:
+
+| Name | Value |
+| --- | --- |
+| `FIREBASE_SERVICE_ACCOUNT` | The whole JSON key file from §3, pasted as one value |
+| `CRON_SECRET` | A long random string you make up |
+| `BACKUP_KEY` | Another long random string. **Keep a copy**: without it backups can't be opened |
+
+5. `vercel --prod`. Note the address, e.g. `https://vvu-safety.vercel.app`.
+
+**The safety-net sweep.** Vercel's free cron only runs daily, so sign up at cron-job.org (free) and create a job:
+
+- URL: `https://<your-project>.vercel.app/api/sweep`
+- Every 1 minute, method GET
+- Header `Authorization` with value `Bearer <your CRON_SECRET>`
+
+**Firestore rules, the dashboard and the app**, using your API address:
+
 ```bash
-flutter build web --release
-firebase deploy --only firestore:rules,firestore:indexes,storage,functions,hosting
-flutter build apk --release   # share the APK for testing
+firebase use prod
+flutter build web --release --dart-define=API_URL=https://<your-project>.vercel.app/api
+firebase deploy --only firestore:rules,firestore:indexes,hosting
+flutter build apk --release --dart-define=API_URL=https://<your-project>.vercel.app/api
 ```
 
-Daily backups (`scheduledBackup`, 02:00 Accra) export Firestore to
-`gs://<default bucket>/backups/YYYY-MM-DD`. Once, after the first functions
-deploy, give the Functions service account the export role:
+**Backups.** `vercel.json` runs `/api/backup` daily at 02:00. It saves `backups/YYYY-MM-DD.json.gz.enc` to Blob, encrypted with `BACKUP_KEY`, and skips itself above 20,000 documents so that it can't use up the free daily reads. To restore one, download the file from the Blob store, then:
 
-```bash
-gcloud projects add-iam-policy-binding vvu-campus-safety \
-  --member=serviceAccount:vvu-campus-safety@appspot.gserviceaccount.com \
-  --role=roles/datastore.importExportAdmin
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\keys\service-account.json"
+$env:BACKUP_KEY = "<your BACKUP_KEY>"
+cd functions
+npm run restore-backup -- <project-id> <backup file>
 ```
 
-The same account already writes to the default bucket. To restore, run
-`gcloud firestore import gs://<bucket>/backups/<date>`. Scheduled functions
-don't run in the emulator.
+**Free-plan limits to keep an eye on:** Firestore 50,000 reads and 20,000 writes a day (the app stops working for the rest of the day if they run out); Vercel Blob about 1 GB; Vercel's Hobby plan is for personal, non-commercial use, which suits this project but not a paid roll-out.
 
 Emergency-contact SMS uses `ConsoleSmsProvider` (logs only) until a gateway
 is chosen (DECISIONS O2). To add one, implement `SmsProvider` in
-`functions/src/sms/`, store its key with `firebase functions:secrets:set`,
+`functions/src/sms/`, store its key as a Vercel environment variable,
 and return it from `getSmsProvider()`.
 
 ## 9. Data you need from VVU

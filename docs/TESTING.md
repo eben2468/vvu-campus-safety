@@ -12,9 +12,9 @@ Run these before every test session and before each deploy.
 | Flutter unit and widget tests | `flutter test` | Models and their Firestore maps, the incident state machine, validators and phone/ID normalisation, routing by role, dashboard statistics, the CSV export and parsers, colour contrast. Widget tests for registration, the SOS countdown and the report form, plus 200% text on the SOS screens. |
 | Dashboard pages | `flutter test test/features/admin/dashboard_pages_test.dart` (part of `flutter test`) | Every dashboard page opens without errors or layout overflows at 1440×900 and 1024×700, with sample data and empty. With `SCREENSHOT_DIR` set, `dashboard_screenshots_test.dart` also saves a PNG of each page. |
 | Static analysis | `flutter analyze` | Lints from `analysis_options.yaml`. |
-| Cloud Functions unit tests | `cd functions && npm test` | ID verification, incident triggers, chat and announcement pushes, admin input checks, settings, SMS text, backup paths. |
-| Security rules tests | `cd functions && npm run test:rules` | Every collection: who can read and write users, contacts, the roster, incidents (with locations, events and chat), announcements, settings and the audit log, and the photo rules in Storage. Includes "a student cannot read another student's incident". |
-| Functions lint and build | `cd functions && npm run lint && npm run build` | TypeScript errors and style. |
+| Server unit tests | `cd functions && npm test` | ID verification, incident sync decisions, chat and announcement pushes, admin input checks, settings, SMS text, photo checks, backup encryption, request checks. |
+| Security rules tests | `cd functions && npm run test:rules` | Every collection: who can read and write users, contacts, the roster, incidents (with locations, events and chat), announcements, settings and the audit log. Includes "a student cannot read another student's incident". |
+| Server lint and build | `cd functions && npm run lint && npm run build` | TypeScript errors and style. |
 
 `npm run test:rules` starts its own emulators. If the dev emulators are
 already running, use `npm run test:rules:run` instead; it uses a separate
@@ -22,9 +22,10 @@ project (`demo-vvu-rules-test`), so your demo data is untouched.
 
 ## 2. Before a test session
 
-1. Deploy (SETUP.md §8), or run the emulators with your PC and phones on
-   the same Wi-Fi (`--dart-define=EMULATOR_HOST=<PC IP>`). Push
-   notifications need the real project.
+1. Deploy (SETUP.md §8), or run the emulators and `npm run api:dev` with
+   your PC and phones on the same Wi-Fi
+   (`--dart-define=EMULATOR_HOST=<PC IP>`). Push notifications need the
+   real project.
 2. Import the testers' IDs on the dashboard's **ID roster** page, or use
    the sample IDs in `functions/scripts/seedRoster.ts`.
 3. Create officer accounts on the **Users** page and have each officer
