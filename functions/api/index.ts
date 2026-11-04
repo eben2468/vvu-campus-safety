@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: ServerResponse) {
   const route = url.searchParams.get("route") ?? url.pathname.split("/").pop() ?? "";
 
   try {
-    const { handleApi } = await import("../src/api/router");
+    const { handleApi } = await import("../src/api/router.js");
     const response = await handleApi({
       method: req.method ?? "GET",
       route,
