@@ -107,9 +107,9 @@ npm run make-admin -- <project-id> cso@vvu.edu.gh "Full Name" +233XXXXXXXXX "tem
 
 **The API, on Vercel** (free Hobby plan):
 
-1. Sign up at vercel.com, then `vercel login`.
-2. In `functions/`, run `vercel link` to create the project.
-3. In the Vercel dashboard: **Storage → Create Database → Blob**, connected to the project. This adds `BLOB_STORE_ID`, and the server signs in with Vercel's OIDC token, so no token needs copying.
+1. Push the repo to GitHub and sign up at vercel.com.
+2. **Add New → Project**, import the repo, and set **Root Directory** to `functions`. Pushing to `main` then deploys the API by itself.
+3. In the Vercel dashboard: **Storage → Create Database → Blob**, connected to the project for Production. This adds `BLOB_STORE_ID`, and the server signs in with Vercel's OIDC token, so no token needs copying.
 4. **Settings → Environment Variables**, for Production:
 
 | Name | Value |
@@ -118,13 +118,22 @@ npm run make-admin -- <project-id> cso@vvu.edu.gh "Full Name" +233XXXXXXXXX "tem
 | `CRON_SECRET` | A long random string you make up |
 | `BACKUP_KEY` | Another long random string. **Keep a copy**: without it backups can't be opened |
 
-5. `vercel --prod`. Note the address, e.g. `https://vvu-safety.vercel.app`.
+5. **Deployments → ⋯ → Redeploy**, because variables only reach new deployments. Note the address, e.g. `https://vvu-safety.vercel.app`.
+6. Open `https://<your-project>.vercel.app/api/health`. It shows no secrets, only whether each setting arrived: `serviceAccountSet`, `blobConnected`, `cronSecretSet` and `backupKeySet` should all be true.
+
+If saved variables still don't reach the running server, and sign-in fails with "Your session has expired", create a fresh Vercel project from the same repo and add them again. That fixed it for this project.
+
+`functions/package.json` pins `jwks-rsa` to 3.2.2 with an override: version 4 needs an ES-module-only library that crashes the function on Vercel.
+
+On Windows, `npm.cmd` adds `^` to quoted arguments containing spaces, so check the name after `npm run make-admin`.
 
 **The safety-net sweep.** Vercel's free cron only runs daily, so sign up at cron-job.org (free) and create a job:
 
 - URL: `https://<your-project>.vercel.app/api/sweep`
 - Every 1 minute, method GET
 - Header `Authorization` with value `Bearer <your CRON_SECRET>`
+
+The job's history should show **200 OK** each minute; 403 means the header is wrong.
 
 **Firestore rules, the dashboard and the app**, using your API address:
 
