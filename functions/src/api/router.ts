@@ -94,6 +94,9 @@ function projectIdIn(serviceAccount: string): string {
 function health() {
   const key = process.env.FIREBASE_SERVICE_ACCOUNT;
   return {
+    vercelEnvironment: process.env.VERCEL_ENV ?? null,
+    vercelUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL ?? null,
+    variableCount: Object.keys(process.env).length,
     serviceAccountSet: Boolean(key),
     projectId: key ? projectIdIn(key) : null,
     blobConnected: hasBlobStore(),
