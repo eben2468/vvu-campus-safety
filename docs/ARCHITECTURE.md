@@ -232,7 +232,7 @@ service cloud.firestore {
 }
 ```
 
-Photos: there are no Storage rules on the free plan. `uploadPhoto` makes the same checks on the server (signed-in verified member or officer, JPEG only, under 2 MB, safe file name). Blob URLs carry a random suffix, so like Firebase download URLs they are unguessable and only reach people who can read the incident. A file can never be overwritten.
+Photos: there are no Storage rules on the free plan. `uploadPhoto` makes the same checks on the server (signed-in verified member or officer, JPEG only, under 2 MB, safe file name). The Blob store is private: photos are read through `/api/file`, which serves only `incidents/` JPEGs (D55). Their paths carry a random suffix, so like Firebase download URLs the addresses are unguessable and only reach people who can read the incident. A file can never be overwritten.
 
 Write rules tests with `@firebase/rules-unit-testing` against the emulator.
 
