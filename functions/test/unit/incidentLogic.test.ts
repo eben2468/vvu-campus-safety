@@ -8,7 +8,28 @@ import {
   officerAlert,
   reporterUpdate,
   statusChangeEffects,
+  syncAction,
 } from "../../src/incidentLogic";
+
+describe("syncAction", () => {
+  it("alerts officers about a new incident", () => {
+    assert.equal(syncAction({ status: "new" }), "alert");
+  });
+
+  it("has nothing to do once a status is handled, so repeat calls are safe", () => {
+    assert.equal(syncAction({ status: "alerted", handledStatus: "alerted" }), "none");
+    assert.equal(syncAction({ status: "resolved", handledStatus: "resolved" }), "none");
+  });
+
+  it("applies a status the server hasn't handled yet", () => {
+    assert.equal(syncAction({ status: "accepted", handledStatus: "alerted" }), "status-change");
+    assert.equal(syncAction({ status: "resolved", handledStatus: "accepted" }), "status-change");
+  });
+
+  it("handles an SOS cancelled before the alert went out", () => {
+    assert.equal(syncAction({ status: "resolved" }), "status-change");
+  });
+});
 
 const sos: IncidentDoc = {
   kind: "sos",

@@ -9,16 +9,21 @@ import '../../../models/app_user.dart';
 import '../../../models/incident.dart';
 import '../../../models/incident_event.dart';
 import '../../../models/incident_status.dart';
+import '../../../services/api_client.dart';
 
 /// Reads and writes `incidents` and their `locations` / `events`.
 ///
 /// Writes a reporter makes during an emergency (SOS, live location, "I'm
 /// safe") never wait for the server: Firestore applies them to the local
 /// cache at once and syncs when there is a connection.
+///
+/// After each incident write the server is told to catch up (syncIncident):
+/// it alerts officers, closes incidents and notifies the reporter.
 class IncidentRepository {
-  IncidentRepository(this._firestore);
+  IncidentRepository(this._firestore, this._api);
 
   final FirebaseFirestore _firestore;
+  final ApiClient _api;
 
   /// How long to wait for the server before treating a write as queued.
   static const serverAckTimeout = Duration(seconds: 6);
@@ -29,15 +34,16 @@ class IncidentRepository {
   CollectionReference<Map<String, dynamic>> _events(String incidentId) =>
       _incidents.doc(incidentId).collection(Collections.events);
 
-  /// Creates an SOS and returns its id. The `onIncidentCreated` function
-  /// then marks it `alerted` and notifies on-duty officers.
+  /// Creates an SOS and returns its id. The server then marks it `alerted`
+  /// and notifies on-duty officers.
   Future<String> createSos({
     required AppUser reporter,
     GeoPoint? location,
     String? locationLabel,
   }) async {
     final doc = _incidents.doc();
-    await _commitOrQueue(
+    await _commitThenSync(
+      doc.id,
       doc.set(
         _newIncident(
           kind: IncidentKind.sos,
@@ -66,7 +72,8 @@ class IncidentRepository {
     GeoPoint? location,
     String? locationLabel,
   }) {
-    return _commitOrQueue(
+    return _commitThenSync(
+      incidentId,
       _incidents
           .doc(incidentId)
           .set(
@@ -210,13 +217,14 @@ class IncidentRepository {
         'text': '${reporter.fullName} marked themselves safe.',
         'timestamp': FieldValue.serverTimestamp(),
       });
-    return _commitOrQueue(batch.commit());
+    return _commitThenSync(incident.id, batch.commit());
   }
 
   /// An officer takes the alert. Runs in a transaction so two officers
   /// can't both accept it.
   Future<void> accept(String incidentId, AppUser officer) async {
     final ref = _incidents.doc(incidentId);
+    await _alertIfStillNew(ref);
     try {
       await _firestore.runTransaction((tx) async {
         final snap = await tx.get(ref);
@@ -246,15 +254,33 @@ class IncidentRepository {
           'timestamp': FieldValue.serverTimestamp(),
         });
       });
+      _sync(incidentId);
     } on FirebaseException catch (e) {
       throw AppException(_officerError(e, 'accept the alert'));
+    }
+  }
+
+  /// Officers can only accept an incident once it is `alerted`. If the
+  /// reporter's sync never arrived, do it now rather than refuse the officer.
+  Future<void> _alertIfStillNew(
+    DocumentReference<Map<String, dynamic>> ref,
+  ) async {
+    try {
+      final snap = await ref.get();
+      if (snap.data()?['status'] == IncidentStatus.newIncident.value) {
+        await _api.call('syncIncident', {'incidentId': ref.id});
+      }
+    } on FirebaseException {
+      // The transaction that follows reports any real problem.
+    } on ApiException {
+      // Likewise.
     }
   }
 
   /// Moves an incident to on scene, resolved or false alarm (PRD §4.5).
   /// On scene and resolve are for officers assigned to the incident (or an
   /// admin); anyone on the security team may mark a false alarm. The
-  /// `onIncidentUpdated` function then closes it and tells the reporter.
+  /// server then closes it and tells the reporter.
   Future<void> updateStatus(
     String incidentId,
     IncidentStatus to,
@@ -293,6 +319,7 @@ class IncidentRepository {
           'timestamp': FieldValue.serverTimestamp(),
         });
       });
+      _sync(incidentId);
     } on FirebaseException catch (e) {
       throw AppException(_officerError(e, 'update the incident'));
     }
@@ -376,6 +403,22 @@ class IncidentRepository {
 
   /// Waits briefly for the server; if it doesn't answer (e.g. offline) the
   /// write stays queued in the local cache and is sent later.
+  /// Asks the server to catch up on this incident (see `syncIncident`).
+  void _sync(String incidentId) =>
+      _api.notify('syncIncident', {'incidentId': incidentId});
+
+  /// [_commitOrQueue], then [_sync] as soon as the write reaches Firestore,
+  /// which for an SOS raised offline may be much later.
+  Future<void> _commitThenSync(String incidentId, Future<void> write) {
+    unawaited(
+      write.then<void>(
+        (_) => _sync(incidentId),
+        onError: (_) {}, // reported by _commitOrQueue
+      ),
+    );
+    return _commitOrQueue(write);
+  }
+
   Future<void> _commitOrQueue(Future<void> write) async {
     try {
       await write.timeout(serverAckTimeout);

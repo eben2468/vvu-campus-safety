@@ -1,17 +1,18 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/errors/app_exception.dart';
+import '../../../services/api_client.dart';
 
-/// Compresses and uploads incident photos to Storage at
-/// `incidents/{incidentId}/photo_N.jpg` (docs/ARCHITECTURE.md §6).
+/// Compresses photos and uploads them through the server
+/// (docs/ARCHITECTURE.md §6).
 class PhotoRepository {
-  PhotoRepository(this._storage);
+  PhotoRepository(this._api);
 
-  final FirebaseStorage _storage;
+  final ApiClient _api;
 
   /// Re-encodes a photo as JPEG, lowering quality until it fits in
   /// [maxPhotoBytes] (≤ 1 MB, D5).
@@ -28,45 +29,40 @@ class PhotoRepository {
     throw const AppException('That photo is too large. Try a different one.');
   }
 
-  /// Uploads [photos] and returns their download URLs, in order.
-  ///
-  /// `reporterId` is stored as custom metadata so `storage.rules` can let
-  /// the reporter (and officers) read the files without a Firestore lookup.
+  /// Uploads [photos] and returns their URLs, in order.
   Future<List<String>> upload({
     required String incidentId,
-    required String reporterId,
     required List<Uint8List> photos,
   }) async {
     try {
       return await Future.wait([
         for (final (i, bytes) in photos.indexed)
-          _uploadOne(
-            _storage.ref(
-              '$storageIncidentsFolder/$incidentId/photo_${i + 1}.jpg',
-            ),
-            bytes,
-            reporterId,
+          uploadOne(
+            api: _api,
+            incidentId: incidentId,
+            fileName: 'photo_${i + 1}.jpg',
+            bytes: bytes,
           ),
       ]);
-    } on FirebaseException {
+    } on ApiException {
       throw const AppException(
         "Couldn't upload your photos. Check your connection and try again.",
       );
     }
   }
 
-  Future<String> _uploadOne(
-    Reference ref,
-    Uint8List bytes,
-    String reporterId,
-  ) async {
-    await ref.putData(
-      bytes,
-      SettableMetadata(
-        contentType: 'image/jpeg',
-        customMetadata: {'reporterId': reporterId},
-      ),
-    );
-    return ref.getDownloadURL();
+  /// Sends one compressed JPEG to the server and returns its URL.
+  static Future<String> uploadOne({
+    required ApiClient api,
+    required String incidentId,
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    final result = await api.call('uploadPhoto', {
+      'incidentId': incidentId,
+      'fileName': fileName,
+      'dataBase64': base64Encode(bytes),
+    });
+    return result['url'] as String;
   }
 }

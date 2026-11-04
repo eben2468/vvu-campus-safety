@@ -2,9 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/app_user.dart';
+import '../../services/api_client.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
-import '../../services/functions_service.dart';
 import '../notifications/providers.dart';
 import 'data/auth_repository.dart';
 import 'data/session.dart';
@@ -13,7 +13,7 @@ import 'data/user_repository.dart';
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     auth: ref.watch(firebaseAuthProvider),
-    functions: ref.watch(functionsProvider),
+    api: ref.watch(apiClientProvider),
   );
 });
 

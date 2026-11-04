@@ -1,7 +1,5 @@
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue, GeoPoint, getFirestore } from "firebase-admin/firestore";
-import { logger } from "firebase-functions/v2";
-import { CallableRequest, HttpsError, onCall } from "firebase-functions/v2/https";
 
 import {
   AuditEntry,
@@ -11,32 +9,25 @@ import {
   parseSetRoleInput,
   setRoleAuditEntries,
 } from "./adminLogic";
+import { ApiError } from "./api/errors";
+import { ApiRequest, requireAdmin } from "./api/request";
 import { changedSettings, LatLng, parseSettingsInput } from "./settingsLogic";
 
 /**
- * Admin-only callables used by the web dashboard (docs/ARCHITECTURE.md §5).
+ * Admin-only API calls used by the web dashboard (docs/ARCHITECTURE.md §5).
  * Each one checks the caller's `role` claim, makes the change with the
  * Admin SDK and writes an `auditLogs` entry.
  */
-
-/** Rejects callers who are not signed in as an admin. Returns their uid. */
-function requireAdmin(request: CallableRequest): string {
-  if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-  if (request.auth.token.role !== "admin") {
-    throw new HttpsError("permission-denied", "Only admins can do this.");
-  }
-  return request.auth.uid;
-}
 
 function audit(entry: AuditEntry) {
   return { ...entry, timestamp: FieldValue.serverTimestamp() };
 }
 
 /** Creates an officer or admin account with a temporary password. */
-export const adminCreateUser = onCall(async (request) => {
+export async function adminCreateUser(request: ApiRequest) {
   const actorId = requireAdmin(request);
   const parsed = parseCreateUserInput(request.data);
-  if (!parsed.ok) throw new HttpsError("invalid-argument", parsed.message);
+  if (!parsed.ok) throw new ApiError("invalid-argument", parsed.message);
   const input = parsed.value;
 
   const auth = getAuth();
@@ -50,7 +41,7 @@ export const adminCreateUser = onCall(async (request) => {
     })
     .catch((error: { code?: string }) => {
       if (error.code === "auth/email-already-exists") {
-        throw new HttpsError("already-exists", "An account with this email already exists.");
+        throw new ApiError("already-exists", "An account with this email already exists.");
       }
       throw error;
     });
@@ -77,25 +68,25 @@ export const adminCreateUser = onCall(async (request) => {
   );
   await batch.commit();
 
-  logger.info("User created", { uid: user.uid, role: input.role, by: actorId });
+  console.info("User created", { uid: user.uid, role: input.role, by: actorId });
   return { uid: user.uid };
-});
+}
 
 /**
  * Changes a user's role and/or deactivates or reactivates them. The claim
  * is set first; the app notices the `users.role` change and refreshes its
  * token. Deactivating also disables sign-in and ends existing sessions.
  */
-export const adminSetRole = onCall(async (request) => {
+export async function adminSetRole(request: ApiRequest) {
   const actorId = requireAdmin(request);
   const parsed = parseSetRoleInput(request.data, actorId);
-  if (!parsed.ok) throw new HttpsError("invalid-argument", parsed.message);
+  if (!parsed.ok) throw new ApiError("invalid-argument", parsed.message);
   const input = parsed.value;
 
   const db = getFirestore();
   const userRef = db.collection("users").doc(input.uid);
   const current = (await userRef.get()).data();
-  if (!current) throw new HttpsError("not-found", "This user no longer exists.");
+  if (!current) throw new ApiError("not-found", "This user no longer exists.");
 
   const entries = setRoleAuditEntries(actorId, input, current);
   if (entries.length === 0) return { changed: false };
@@ -123,19 +114,19 @@ export const adminSetRole = onCall(async (request) => {
   for (const entry of entries) batch.set(db.collection("auditLogs").doc(), audit(entry));
   await batch.commit();
 
-  logger.info("User updated", { uid: input.uid, actions: entries.map((e) => e.action), by: actorId });
+  console.info("User updated", { uid: input.uid, actions: entries.map((e) => e.action), by: actorId });
   return { changed: true };
-});
+}
 
 /**
  * Adds or updates `idRoster` entries from a CSV the dashboard has parsed.
  * Existing entries keep `claimedBy`, so re-importing next semester's list
  * doesn't unlink registered students.
  */
-export const adminImportRoster = onCall(async (request) => {
+export async function adminImportRoster(request: ApiRequest) {
   const actorId = requireAdmin(request);
   const parsed = parseRosterRows(request.data);
-  if (!parsed.ok) throw new HttpsError("invalid-argument", parsed.message);
+  if (!parsed.ok) throw new ApiError("invalid-argument", parsed.message);
   const { valid, rejected } = parsed.value;
 
   const db = getFirestore();
@@ -161,19 +152,19 @@ export const adminImportRoster = onCall(async (request) => {
       }),
     );
 
-  logger.info("Roster imported", { imported: valid.length, rejected: rejected.length, by: actorId });
+  console.info("Roster imported", { imported: valid.length, rejected: rejected.length, by: actorId });
   // Enough detail for the admin to fix the file without a huge response.
   return { imported: valid.length, rejectedCount: rejected.length, rejected: rejected.slice(0, 100) };
-});
+}
 
 /**
  * Saves `settings/app` from the dashboard's settings page. Rules don't let
  * clients write settings directly, so every change is audited.
  */
-export const adminUpdateSettings = onCall(async (request) => {
+export async function adminUpdateSettings(request: ApiRequest) {
   const actorId = requireAdmin(request);
   const parsed = parseSettingsInput(request.data);
-  if (!parsed.ok) throw new HttpsError("invalid-argument", parsed.message);
+  if (!parsed.ok) throw new ApiError("invalid-argument", parsed.message);
   const input = parsed.value;
 
   const db = getFirestore();
@@ -196,6 +187,6 @@ export const adminUpdateSettings = onCall(async (request) => {
   );
   await batch.commit();
 
-  logger.info("Settings updated", { fields: changed, by: actorId });
+  console.info("Settings updated", { fields: changed, by: actorId });
   return { changed };
-});
+}

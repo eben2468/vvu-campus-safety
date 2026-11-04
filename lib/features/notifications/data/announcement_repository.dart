@@ -3,13 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/constants.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../models/announcement.dart';
+import '../../../services/api_client.dart';
 
 /// Campus announcements. Admins post them from the dashboard;
-/// `onAnnouncementCreated` pushes each one to its topic.
+/// the server then pushes each one to its topic.
 class AnnouncementRepository {
-  AnnouncementRepository(this._firestore);
+  AnnouncementRepository(this._firestore, this._api);
 
   final FirebaseFirestore _firestore;
+  final ApiClient _api;
 
   /// Announcements for [role], newest first. The `audience` filter is
   /// required: firestore.rules only allows reading your own audiences.
@@ -40,13 +42,14 @@ class AnnouncementRepository {
     required String byUid,
   }) async {
     try {
-      await _firestore.collection(Collections.announcements).add({
+      final doc = await _firestore.collection(Collections.announcements).add({
         'title': title.trim(),
         'body': body.trim(),
         'audience': audience.name,
         'createdBy': byUid,
         'createdAt': FieldValue.serverTimestamp(),
       });
+      _api.notify('notifyAnnouncement', {'announcementId': doc.id});
     } on FirebaseException catch (e) {
       throw AppException(
         e.code == 'permission-denied'

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/announcement.dart';
 import '../../routing/routes.dart';
+import '../../services/api_client.dart';
 import '../../services/firestore_service.dart';
 import '../../services/messaging_service.dart';
 import '../auth/data/session.dart';
@@ -50,7 +51,10 @@ String routeForPush(Map<String, dynamic> data) {
 }
 
 final announcementRepositoryProvider = Provider<AnnouncementRepository>((ref) {
-  return AnnouncementRepository(ref.watch(firestoreProvider));
+  return AnnouncementRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(apiClientProvider),
+  );
 });
 
 /// Announcements for the signed-in user's role, newest first.

@@ -1,6 +1,5 @@
 import { DocumentSnapshot, FieldValue, getFirestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
-import { logger } from "firebase-functions/v2";
 
 import { PushContent } from "./incidentLogic";
 
@@ -51,7 +50,7 @@ export async function pushToUsers(
     return response.successCount;
   } catch (error) {
     // Expected on the emulator: FCM is not emulated.
-    logger.warn("Push failed", { error: String(error) });
+    console.warn("Push failed", { error: String(error) });
     return 0;
   }
 }
@@ -80,7 +79,7 @@ export async function pushToTopic(topic: string, content: PushContent, data: Rec
     });
     return true;
   } catch (error) {
-    logger.warn("Topic push failed", { topic, error: String(error) });
+    console.warn("Topic push failed", { topic, error: String(error) });
     return false;
   }
 }

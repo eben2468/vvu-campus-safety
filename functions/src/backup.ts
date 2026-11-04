@@ -1,29 +1,43 @@
-import { v1 } from "@google-cloud/firestore";
-import { logger } from "firebase-functions/v2";
-import { onSchedule } from "firebase-functions/v2/scheduler";
+import { CollectionGroup, CollectionReference, getFirestore } from "firebase-admin/firestore";
 
-import { backupUri, defaultBucket } from "./backupLogic";
+import { ApiError } from "./api/errors";
+import { BACKUP_MAX_DOCS, BackupDocs, backupPath, encodeValue, sealBackup } from "./backupLogic";
+import { getFileStore } from "./photoStore";
+
+const TOP_LEVEL = ["users", "idRoster", "incidents", "announcements", "settings", "auditLogs"];
+const NESTED = ["contacts", "events", "messages", "locations"];
 
 /**
- * Daily Firestore export to Cloud Storage (PRD §4.12) at 02:00 Accra time.
- * The Functions service account needs the "Cloud Datastore Import Export
- * Admin" role and write access to the bucket (docs/SETUP.md). Scheduled
- * functions don't run in the emulator.
+ * Daily backup (PRD §4.12): every document, encrypted, saved to the file
+ * store. Free-plan Firestore has no managed export, so this reads each
+ * document itself. Restore with `npm run restore-backup`.
  */
-export const scheduledBackup = onSchedule(
-  { schedule: "0 2 * * *", timeZone: "Africa/Accra", retryCount: 2 },
-  async () => {
-    const projectId = process.env.GCLOUD_PROJECT;
-    const bucket = defaultBucket(process.env.FIREBASE_CONFIG);
-    if (!projectId || !bucket) throw new Error("Project id or storage bucket not configured.");
+export async function runBackup() {
+  const passphrase = process.env.BACKUP_KEY;
+  if (!passphrase) throw new ApiError("failed-precondition", "BACKUP_KEY is not set.");
 
-    const client = new v1.FirestoreAdminClient();
-    const outputUriPrefix = backupUri(bucket, new Date());
-    const [operation] = await client.exportDocuments({
-      name: client.databasePath(projectId, "(default)"),
-      outputUriPrefix,
-      collectionIds: [], // every collection
-    });
-    logger.info("Firestore backup started", { outputUriPrefix, operation: operation.name });
-  },
-);
+  const db = getFirestore();
+  const sources: (CollectionReference | CollectionGroup)[] = [
+    ...TOP_LEVEL.map((name) => db.collection(name)),
+    ...NESTED.map((name) => db.collectionGroup(name)),
+  ];
+
+  // Counting is cheap; reading too much could lock the app out for the day.
+  const counts = await Promise.all(sources.map((source) => source.count().get()));
+  const total = counts.reduce((sum, count) => sum + count.data().count, 0);
+  if (total > BACKUP_MAX_DOCS) {
+    console.error("Backup skipped: database too large for the free plan", { total });
+    return { skipped: true, documents: total };
+  }
+
+  const docs: BackupDocs = {};
+  for (const source of sources) {
+    const snap = await source.get();
+    for (const doc of snap.docs) docs[doc.ref.path] = encodeValue(doc.data());
+  }
+
+  const path = backupPath(new Date());
+  const url = await getFileStore().save(path, sealBackup(docs, passphrase), "application/octet-stream");
+  console.info("Backup saved", { path, documents: total });
+  return { skipped: false, documents: total, url };
+}

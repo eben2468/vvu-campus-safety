@@ -22,9 +22,6 @@ abstract final class Collections {
   static const appSettingsDoc = 'app';
 }
 
-/// Storage folder for incident photos: `incidents/{incidentId}/{file}`.
-const storageIncidentsFolder = 'incidents';
-
 /// User role, read from the Firebase Auth `role` custom claim.
 enum UserRole {
   student,

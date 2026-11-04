@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/app_user.dart';
 import '../../models/audit_log_entry.dart';
 import '../../models/incident.dart';
+import '../../services/api_client.dart';
 import '../../services/firestore_service.dart';
-import '../../services/functions_service.dart';
 import '../officer/providers.dart';
 import 'data/admin_repository.dart';
 import 'data/dashboard_repository.dart';
@@ -19,7 +19,7 @@ final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
 final adminRepositoryProvider = Provider<AdminRepository>((ref) {
   return AdminRepository(
     ref.watch(firestoreProvider),
-    ref.watch(functionsProvider),
+    ref.watch(apiClientProvider),
   );
 });
 

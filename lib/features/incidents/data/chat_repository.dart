@@ -2,21 +2,22 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../models/app_user.dart';
 import '../../../models/chat_message.dart';
+import '../../../services/api_client.dart';
+import 'photo_repository.dart';
 
 /// Per-incident chat between the reporter and security (PRD §4.6):
-/// `incidents/{id}/messages`. The `onMessageCreated` function pushes each
-/// message to the other side.
+/// `incidents/{id}/messages`. Once a message reaches Firestore the server
+/// pushes it to the other side.
 class ChatRepository {
-  ChatRepository(this._firestore, this._storage);
+  ChatRepository(this._firestore, this._api);
 
   final FirebaseFirestore _firestore;
-  final FirebaseStorage _storage;
+  final ApiClient _api;
 
   static const maxMessageLength = 2000;
 
@@ -47,7 +48,6 @@ class ChatRepository {
   /// needs a connection to upload. [photo] must already be compressed.
   Future<void> send({
     required String incidentId,
-    required String reporterId,
     required AppUser sender,
     String text = '',
     Uint8List? photo,
@@ -55,7 +55,7 @@ class ChatRepository {
     final doc = _messages(incidentId).doc();
     String? imageUrl;
     if (photo != null) {
-      imageUrl = await _uploadPhoto(incidentId, doc.id, reporterId, photo);
+      imageUrl = await _uploadPhoto(incidentId, doc.id, photo);
     }
     final write = doc.set({
       'senderId': sender.uid,
@@ -65,6 +65,16 @@ class ChatRepository {
       'imageUrl': imageUrl,
       'timestamp': FieldValue.serverTimestamp(),
     });
+    // Runs when the message reaches Firestore, even if that's much later.
+    unawaited(
+      write.then<void>(
+        (_) => _api.notify('notifyMessage', {
+          'incidentId': incidentId,
+          'messageId': doc.id,
+        }),
+        onError: (_) {}, // reported below
+      ),
+    );
     try {
       await write.timeout(const Duration(seconds: 6));
     } on TimeoutException {
@@ -74,27 +84,20 @@ class ChatRepository {
     }
   }
 
-  /// Chat photos sit beside the incident's photos. They carry the
-  /// incident's reporter as `reporterId` so both sides can open them.
+  /// Chat photos are stored beside the incident's photos.
   Future<String> _uploadPhoto(
     String incidentId,
     String messageId,
-    String reporterId,
     Uint8List bytes,
   ) async {
-    final ref = _storage.ref(
-      '$storageIncidentsFolder/$incidentId/chat_$messageId.jpg',
-    );
     try {
-      await ref.putData(
-        bytes,
-        SettableMetadata(
-          contentType: 'image/jpeg',
-          customMetadata: {'reporterId': reporterId},
-        ),
+      return await PhotoRepository.uploadOne(
+        api: _api,
+        incidentId: incidentId,
+        fileName: 'chat_$messageId.jpg',
+        bytes: bytes,
       );
-      return await ref.getDownloadURL();
-    } on FirebaseException {
+    } on ApiException {
       throw const AppException(
         "Couldn't send the photo. Check your connection and try again.",
       );

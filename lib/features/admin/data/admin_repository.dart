@@ -1,11 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../models/app_settings.dart';
 import '../../../models/app_user.dart';
+import '../../../services/api_client.dart';
 import 'roster_csv.dart';
 
 /// A point as the admin functions expect it.
@@ -41,12 +41,12 @@ class RosterImportResult {
 }
 
 /// User and roster management for admins. Every change goes through an
-/// admin Cloud Function, which sets custom claims and writes `auditLogs`.
+/// admin API call, which sets custom claims and writes `auditLogs`.
 class AdminRepository {
-  AdminRepository(this._firestore, this._functions);
+  AdminRepository(this._firestore, this._api);
 
   final FirebaseFirestore _firestore;
-  final FirebaseFunctions _functions;
+  final ApiClient _api;
 
   /// Largest upload `adminImportRoster` accepts in one call.
   static const rosterBatchSize = 5000;
@@ -144,15 +144,12 @@ class AdminRepository {
     Map<String, dynamic> data,
   ) async {
     try {
-      final result = await _functions.httpsCallable(name).call<Object?>(data);
-      final value = result.data;
-      return value is Map ? Map<String, dynamic>.from(value) : const {};
-    } on FirebaseFunctionsException catch (e) {
+      return await _api.call(name, data);
+    } on ApiException catch (e) {
       throw AppException(switch (e.code) {
-        'unavailable' ||
-        'deadline-exceeded' => "Can't reach the server. Check your connection.",
-        'internal' || 'unknown' => 'Something went wrong. Please try again.',
-        _ => e.message ?? 'Something went wrong. Please try again.',
+        'unavailable' => "Can't reach the server. Check your connection.",
+        'internal' => 'Something went wrong. Please try again.',
+        _ => e.message,
       });
     }
   }

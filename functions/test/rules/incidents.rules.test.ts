@@ -227,6 +227,11 @@ describe("reporter updates", () => {
     await seedIncident("s1", { status: "alerted" });
     await assertFails(updateDoc(doc(as.abena(), "incidents/s1"), { lastLocation: campus }));
   });
+
+  it("cannot set the server-only handledStatus field", async () => {
+    await seedIncident("s1", { status: "alerted" });
+    await assertFails(updateDoc(doc(as.kwame(), "incidents/s1"), { handledStatus: "resolved" }));
+  });
 });
 
 describe("officer updates", () => {

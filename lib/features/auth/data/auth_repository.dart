@@ -1,8 +1,8 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../../services/api_client.dart';
 import 'session.dart';
 
 const accountDeactivatedMessage =
@@ -36,10 +36,10 @@ bool isAccountGone(Object? error) {
 /// Sign-in, registration and ID verification. Firebase errors are turned
 /// into [AppException]s with plain-English messages.
 class AuthRepository {
-  AuthRepository({required this._auth, required this._functions});
+  AuthRepository({required this._auth, required this._api});
 
   final FirebaseAuth _auth;
-  final FirebaseFunctions _functions;
+  final ApiClient _api;
 
   /// Emits on sign-in, sign-out and every token refresh (which is when new
   /// custom claims arrive).
@@ -101,13 +101,13 @@ class AuthRepository {
     required String phone,
   }) async {
     try {
-      await _functions.httpsCallable('verifyId').call<Object?>({
+      await _api.call('verifyId', {
         'idNumber': idNumber,
         'fullName': fullName,
         'phone': phone,
       });
-    } on FirebaseFunctionsException catch (e) {
-      throw AppException(_functionsMessage(e));
+    } on ApiException catch (e) {
+      throw AppException(_apiMessage(e));
     }
     await _auth.currentUser?.getIdToken(true);
   }
@@ -161,7 +161,7 @@ class AuthRepository {
     _ => 'Something went wrong. Please try again.',
   };
 
-  static String _functionsMessage(FirebaseFunctionsException e) {
+  static String _apiMessage(ApiException e) {
     switch (e.code) {
       case 'not-found':
       case 'failed-precondition':
@@ -169,12 +169,11 @@ class AuthRepository {
       case 'already-exists':
       case 'invalid-argument':
       case 'unauthenticated':
-        return e.message ?? 'We could not verify your ID.';
+        return e.message;
       case 'unavailable':
-      case 'deadline-exceeded':
         return "Can't reach the server. Check your connection and try again.";
       default:
-        debugPrint('verifyId failed: ${e.code} ${e.message} ${e.details}');
+        debugPrint('verifyId failed: ${e.code} ${e.message}');
         return 'Something went wrong verifying your ID. Please try again.';
     }
   }

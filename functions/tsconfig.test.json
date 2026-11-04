@@ -4,5 +4,5 @@
     "rootDir": ".",
     "outDir": "lib-test"
   },
-  "include": ["src", "test", "scripts"]
+  "include": ["src", "api", "test", "scripts"]
 }

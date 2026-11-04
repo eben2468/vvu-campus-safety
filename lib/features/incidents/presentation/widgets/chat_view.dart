@@ -25,13 +25,7 @@ class ChatView extends ConsumerWidget {
       if (incident == null || me == null) return;
       await ref
           .read(chatRepositoryProvider)
-          .send(
-            incidentId: incidentId,
-            reporterId: incident.reporterId,
-            sender: me,
-            text: text,
-            photo: photo,
-          );
+          .send(incidentId: incidentId, sender: me, text: text, photo: photo);
     }
 
     return Column(

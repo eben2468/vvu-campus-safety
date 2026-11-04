@@ -71,3 +71,8 @@ ui-debug.log
 pubsub-debug.log
 functions/lib/
 functions/node_modules/
+
+# Photos and backups saved by the local API server
+functions/.local-uploads/
+.vercel/
+functions/.vercel/

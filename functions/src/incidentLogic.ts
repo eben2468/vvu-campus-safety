@@ -1,16 +1,18 @@
 /**
- * Decisions the incident triggers make. Pure functions with no Firebase
- * imports, so they can be unit tested (test/unit/incidentLogic.test.ts).
+ * Decisions `syncIncident` makes. Pure functions with no Firebase imports,
+ * so they can be unit tested (test/unit/incidentLogic.test.ts).
  */
 
 /** The fixed status enum (CLAUDE.md, docs/ARCHITECTURE.md §4). */
 export type IncidentStatus = "new" | "alerted" | "accepted" | "on_scene" | "resolved" | "false_alarm";
 
-/** The fields of an `incidents/{id}` document the triggers use. */
+/** The fields of an `incidents/{id}` document the server uses. */
 export interface IncidentDoc {
   kind: "sos" | "report";
   category: string;
   status: IncidentStatus;
+  /** The last status the server finished handling (server-only field). */
+  handledStatus?: IncidentStatus;
   reporterId: string;
   reporterName: string;
   locationLabel?: string | null;
@@ -39,7 +41,19 @@ export function isClosed(status: IncidentStatus): boolean {
   return status === "resolved" || status === "false_alarm";
 }
 
-/** Text of the `created` event the trigger records. */
+export type SyncAction = "alert" | "status-change" | "none";
+
+/**
+ * What `syncIncident` still has to do for this incident. Comparing `status`
+ * with `handledStatus` is what makes sync safe to call any number of times,
+ * from the app and from the sweep: finished work is never repeated.
+ */
+export function syncAction(incident: Pick<IncidentDoc, "status" | "handledStatus">): SyncAction {
+  if (incident.status === "new") return "alert";
+  return incident.status === incident.handledStatus ? "none" : "status-change";
+}
+
+/** Text of the `created` event `syncIncident` records. */
 export function createdEventText(incident: IncidentDoc): string {
   return incident.kind === "sos"
     ? `${incident.reporterName} pressed SOS.`
@@ -94,7 +108,7 @@ export interface StatusChangeEffects {
   notifyReporter: boolean;
 }
 
-/** What `onIncidentUpdated` should do after a status change. */
+/** What `syncIncident` should do after a status change. */
 export function statusChangeEffects(before: StatusSnapshot, after: StatusSnapshot): StatusChangeEffects {
   const closed = isClosed(after.status);
   let responseSeconds: number | undefined;
