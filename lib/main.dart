@@ -8,11 +8,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app.dart';
 import 'core/env.dart';
 import 'firebase_options.dart';
+import 'firebase_options_demo.dart';
 import 'services/preferences_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: useEmulator
+        ? DemoFirebaseOptions.currentPlatform
+        : DefaultFirebaseOptions.currentPlatform,
+  );
   if (useEmulator) {
     await _connectToEmulators();
   }

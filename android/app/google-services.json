@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "303955755498",
+    "project_id": "vvu-campus-safety",
+    "storage_bucket": "vvu-campus-safety.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:303955755498:android:4e8ec0aa8ac388ebf37293",
+        "android_client_info": {
+          "package_name": "gh.edu.vvu.vvu_campus_safety"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAU8Mxh-9OueCMfR98Bj02O67eDhfQs9ok"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
