@@ -20,6 +20,9 @@
     "make-admin": "npm run build:test && node lib-test/scripts/makeAdmin.js",
     "restore-backup": "npm run build:test && node lib-test/scripts/restoreBackup.js"
   },
+  "overrides": {
+    "jwks-rsa": "3.2.2"
+  },
   "dependencies": {
     "@vercel/blob": "^2.8.2",
     "firebase-admin": "^14.5.0"
