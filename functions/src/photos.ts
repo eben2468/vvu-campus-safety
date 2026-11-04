@@ -15,6 +15,12 @@ export async function uploadPhoto(request: ApiRequest) {
   }
   const parsed = parsePhotoUpload(request.data);
   if (!parsed.ok) throw new ApiError("invalid-argument", parsed.message);
-  const url = await getFileStore().save(parsed.value.path, parsed.value.bytes, "image/jpeg");
-  return { url };
+  try {
+    const url = await getFileStore().save(parsed.value.path, parsed.value.bytes, "image/jpeg");
+    return { url };
+  } catch (error) {
+    console.error("Could not store a photo", error);
+    const { name, message } = error as Error;
+    throw new ApiError("internal", `The server could not store the photo (${name}: ${message}).`);
+  }
 }
