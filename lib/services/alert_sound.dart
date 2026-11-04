@@ -1,4 +1,4 @@
-/// Plays a short alarm tone on the web dashboard when a new SOS arrives.
+/// Plays the siren on the web dashboard while a new SOS is waiting.
 /// Phones don't need it: they get a high-priority push notification.
 library;
 

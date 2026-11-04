@@ -6,6 +6,7 @@ import {
   createdEventText,
   IncidentDoc,
   officerAlert,
+  officerAlertChannel,
   reporterUpdate,
   statusChangeEffects,
   syncAction,
@@ -58,6 +59,8 @@ describe("event and push text", () => {
       body: "Emergency near Hostels. Tap to see their live location.",
     });
     assert.equal(officerAlert({ ...sos, locationLabel: null }).body, "Emergency. Tap to see their live location.");
+    assert.equal(officerAlertChannel(sos).channelId, "sos_alarm");
+    assert.equal(officerAlertChannel({ ...sos, kind: "report" }).channelId, "sos_alerts");
   });
 
   it("tells the reporter who accepted", () => {

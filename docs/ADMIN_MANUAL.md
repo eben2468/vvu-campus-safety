@@ -31,9 +31,9 @@ The page to keep open in the Security Office.
   to open its incident.
 
 **New SOS alarm.** When an SOS arrives that nobody has accepted, the
-dashboard beeps three times and a red banner flashes on whatever page is
-open. Click **View** to open the SOS, or **Dismiss** to silence it. The
-banner also clears by itself once an officer accepts. The browser only
+dashboard sounds a siren every few seconds and a red banner flashes on
+whatever page is open. Click **View** to open the SOS, or **Dismiss** to
+silence it. Both also stop by themselves once an officer accepts. The browser only
 plays sound after you have clicked somewhere on the page, which signing
 in does; keep the computer's volume up.
 

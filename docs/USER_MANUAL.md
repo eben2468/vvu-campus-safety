@@ -124,8 +124,10 @@ list below the switch shows every open alert: SOS first, then the oldest.
 
 ### 2. Responding to an alert
 
-A new SOS or report sounds a high-priority notification. Tap it, or the
-alert in your list, to open it. You see:
+A new SOS sounds a loud 10-second siren and vibrates strongly, using your
+phone's alarm volume, so keep that turned up. A new report sounds a normal
+notification. Tap the notification, or the alert in your list, to open it.
+You see:
 
 - the reporter's position on a map (it moves while their SOS is active);
 - their name, phone number, the nearest campus area and the time raised;

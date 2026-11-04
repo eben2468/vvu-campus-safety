@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The alarm is only named in code and pushes, so the release build's
+     resource shrinker would otherwise remove it. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/sos_alarm" />

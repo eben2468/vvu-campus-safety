@@ -26,6 +26,7 @@ class _NewSosBannerState extends ConsumerState<NewSosBanner> {
   /// Ids of new SOS alerts nobody has opened or dismissed yet.
   final _unseen = <String>[];
   Timer? _flash;
+  Timer? _alarm;
   bool _bright = true;
 
   @override
@@ -41,6 +42,7 @@ class _NewSosBannerState extends ConsumerState<NewSosBanner> {
   @override
   void dispose() {
     _flash?.cancel();
+    _alarm?.cancel();
     super.dispose();
   }
 
@@ -53,22 +55,30 @@ class _NewSosBannerState extends ConsumerState<NewSosBanner> {
     };
     final before = _unseen.length;
     _unseen.removeWhere((id) => !waiting.contains(id));
-    if (arrived.isNotEmpty) {
-      playAlertTone();
-      _unseen.addAll(arrived.map((i) => i.id));
-    }
+    _unseen.addAll(arrived.map((i) => i.id));
     // The first call comes from initState and never changes anything.
     if (arrived.isNotEmpty || _unseen.length != before) {
       setState(() {});
-      _updateFlash();
+      _updateAlarm();
     }
   }
 
-  void _updateFlash() {
+  /// Flashes and sounds until nothing is waiting, in case nobody is at the
+  /// desk when the SOS arrives.
+  void _updateAlarm() {
     if (_unseen.isEmpty) {
       _flash?.cancel();
       _flash = null;
+      _alarm?.cancel();
+      _alarm = null;
     } else {
+      if (_alarm == null) {
+        playAlertTone();
+        _alarm = Timer.periodic(
+          const Duration(seconds: 4),
+          (_) => playAlertTone(),
+        );
+      }
       _flash ??= Timer.periodic(
         const Duration(milliseconds: 600),
         (_) => setState(() => _bright = !_bright),
@@ -78,7 +88,7 @@ class _NewSosBannerState extends ConsumerState<NewSosBanner> {
 
   void _dismiss([String? id]) {
     setState(() => id == null ? _unseen.clear() : _unseen.remove(id));
-    _updateFlash();
+    _updateAlarm();
   }
 
   @override

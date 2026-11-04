@@ -238,7 +238,7 @@ Write rules tests with `@firebase/rules-unit-testing` against the emulator.
 
 ## 7. Notifications
 
-- Officers: high-priority FCM data message with `type: 'sos'|'report'`, `incidentId`. Android notification channel `sos_alerts` with max importance and a distinct sound.
+- Officers: high-priority FCM data message with `type: 'sos'|'report'`, `incidentId`. An SOS uses Android channel `sos_alarm` (max importance, a 10-second siren at alarm volume, strong vibration); a report uses `sos_alerts` (max importance, default sound), as do status and chat pushes.
 - Reporters: `type: 'status'` with new status; `type: 'message'` for chat.
 - App handles `onMessage` (foreground → local notification), `onMessageOpenedApp` and `getInitialMessage` → route to incident screen.
 - Request notification permission at onboarding (Android 13+ requires runtime permission).

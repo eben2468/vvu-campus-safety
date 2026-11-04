@@ -53,7 +53,7 @@ Nothing to set up. The in-app maps use OpenStreetMap tiles through `flutter_map`
 
 - `minSdkVersion` 23 or higher (Firebase requirement) in `android/app/build.gradle`.
 - Permissions in `AndroidManifest.xml`: `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `POST_NOTIFICATIONS`, `CAMERA`, `CALL_PHONE` (optional — or use the dialer intent without it).
-- Create notification channel `sos_alerts` (max importance) at app start.
+- Create notification channels `sos_alarm` and `sos_alerts` (max importance) at app start. The alarm is `res/raw/sos_alarm.wav`, made by `dart run tool/make_alarm_sound.dart`; `res/raw/keep.xml` stops the release build removing it. Android fixes a channel's sound when it is created, so a new sound needs a new channel id.
 
 ## 6. Run locally with emulators
 

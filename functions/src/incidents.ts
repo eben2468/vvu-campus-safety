@@ -6,6 +6,7 @@ import {
   createdEventText,
   IncidentDoc,
   officerAlert,
+  officerAlertChannel,
   reporterUpdate,
   StatusSnapshot,
   statusChangeEffects,
@@ -99,10 +100,12 @@ async function alertOfficers(ref: DocumentReference): Promise<boolean> {
   });
   if (!incident) return false;
 
-  const sent = await pushToUsers(officers.map(recipientFrom), officerAlert(incident), {
-    type: incident.kind,
-    incidentId: ref.id,
-  });
+  const sent = await pushToUsers(
+    officers.map(recipientFrom),
+    officerAlert(incident),
+    { type: incident.kind, incidentId: ref.id },
+    officerAlertChannel(incident),
+  );
   console.info("Incident alerted", { incidentId: ref.id, officers: officers.length, pushesSent: sent });
 
   if (incident.kind === "sos") {

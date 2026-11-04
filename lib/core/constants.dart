@@ -109,7 +109,14 @@ const maxIncidentPhotos = 3;
 /// Maximum emergency contacts per user.
 const maxEmergencyContacts = 5;
 
-/// Android notification channel for SOS and report alerts.
+/// Android notification channel for an SOS reaching officers. Its alarm is
+/// fixed once the channel exists, so a new sound needs a new channel id.
+const sosAlarmChannelId = 'sos_alarm';
+
+/// The alarm in `android/app/src/main/res/raw`, without its extension.
+const sosAlarmSound = 'sos_alarm';
+
+/// Android notification channel for reports, chat and status updates.
 const sosAlertsChannelId = 'sos_alerts';
 
 /// Android notification channel for campus announcements (less urgent).

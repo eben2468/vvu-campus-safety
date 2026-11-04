@@ -1,7 +1,7 @@
 import { DocumentSnapshot, FieldValue, getFirestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 
-import { PushContent } from "./incidentLogic";
+import { INCIDENT_CHANNEL, PushChannel, PushContent } from "./incidentLogic";
 
 /** A user and their devices' push IDs (`users/{uid}.fcmTokens`). */
 export interface Recipient {
@@ -18,8 +18,8 @@ export function recipientFrom(user: DocumentSnapshot): Recipient {
 }
 
 /**
- * Sends a high-priority push on the `sos_alerts` channel to every device of
- * every recipient, and removes push IDs FCM reports as stale. Never throws:
+ * Sends a high-priority push on [channel] to every device of every
+ * recipient, and removes push IDs FCM reports as stale. Never throws:
  * a failed push must not undo the status change that triggered it.
  * Returns how many devices accepted the message.
  */
@@ -27,6 +27,7 @@ export async function pushToUsers(
   recipients: Recipient[],
   content: PushContent,
   data: Record<string, string>,
+  channel: PushChannel = INCIDENT_CHANNEL,
 ): Promise<number> {
   const targets = recipients.flatMap((r) => r.pushIds.map((pushId) => ({ uid: r.uid, pushId })));
   if (targets.length === 0) return 0;
@@ -36,7 +37,7 @@ export async function pushToUsers(
       fids: targets.map((t) => t.pushId),
       notification: content,
       data,
-      android: { priority: "high", notification: { channelId: "sos_alerts", sound: "default" } },
+      android: { priority: "high", notification: channel },
     });
     const stale = targets.filter((_, i) => {
       const error = response.responses[i]?.error;

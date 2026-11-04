@@ -19,10 +19,23 @@ class MessagingService {
   final FirebaseMessaging _messaging;
   final FlutterLocalNotificationsPlugin _local;
 
+  /// Uses the alarm volume, so it sounds even if notifications are turned
+  /// down. Only an SOS reaching officers comes here.
+  static final _alarmChannel = AndroidNotificationChannel(
+    sosAlarmChannelId,
+    'SOS alarm',
+    description: 'A loud alarm when someone on campus sends an SOS.',
+    importance: Importance.max,
+    sound: const RawResourceAndroidNotificationSound(sosAlarmSound),
+    audioAttributesUsage: AudioAttributesUsage.alarm,
+    enableVibration: true,
+    vibrationPattern: Int64List.fromList([0, 800, 200, 800, 200, 800]),
+  );
+
   static const _channel = AndroidNotificationChannel(
     sosAlertsChannelId,
-    'SOS and incident alerts',
-    description: 'New SOS alerts, reports and updates on your incidents.',
+    'Incident alerts',
+    description: 'New reports, messages and updates on your incidents.',
     importance: Importance.max,
   );
 
@@ -53,6 +66,11 @@ class MessagingService {
           }
         },
       );
+      await _local
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(_alarmChannel);
       await _local
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
@@ -107,9 +125,11 @@ class MessagingService {
   Future<void> _showInForeground(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
-    final channel = message.data['type'] == 'announcement'
-        ? _announcementsChannel
-        : _channel;
+    final channel = switch (message.data['type']) {
+      'sos' => _alarmChannel,
+      'announcement' => _announcementsChannel,
+      _ => _channel,
+    };
     await _local.show(
       id: message.hashCode,
       title: notification.title,
@@ -121,6 +141,9 @@ class MessagingService {
           channelDescription: channel.description,
           importance: channel.importance,
           priority: Priority.high,
+          sound: channel.sound,
+          audioAttributesUsage: channel.audioAttributesUsage,
+          vibrationPattern: channel.vibrationPattern,
         ),
       ),
       payload: jsonEncode(message.data),

@@ -76,6 +76,22 @@ export function officerAlert(incident: IncidentDoc): PushContent {
     : { title: `New report: ${incident.category}`, body: `From ${incident.reporterName}${where}.` };
 }
 
+/** How a push sounds on Android: a notification channel and its sound. */
+export interface PushChannel {
+  channelId: string;
+  sound: string;
+}
+
+/** Reports, chat and status updates. */
+export const INCIDENT_CHANNEL: PushChannel = { channelId: "sos_alerts", sound: "default" };
+
+/** The alarm, kept for an SOS so that officers never get used to it. */
+export const SOS_ALARM_CHANNEL: PushChannel = { channelId: "sos_alarm", sound: "sos_alarm" };
+
+export function officerAlertChannel(incident: IncidentDoc): PushChannel {
+  return incident.kind === "sos" ? SOS_ALARM_CHANNEL : INCIDENT_CHANNEL;
+}
+
 /** Push shown to the reporter when their incident's status changes, if any. */
 export function reporterUpdate(status: IncidentStatus, officerName?: string): PushContent | null {
   const officer = officerName ?? "An officer";
